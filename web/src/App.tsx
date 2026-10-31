@@ -1,0 +1,55 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { api, ApiError, type Role, type User } from './api'
+import Admin from './pages/Admin'
+import Customer from './pages/Customer'
+import Login from './pages/Login'
+import Merchant from './pages/Merchant'
+import { ErrorBox, Loading, SimBanner } from './ui'
+
+interface Auth { user: User | null; setUser: (u: User | null) => void }
+const AuthCtx = createContext<Auth>({ user: null, setUser: () => {} })
+export const useAuth = () => useContext(AuthCtx)
+
+function Protected({ role, children }: { role: Role; children: ReactNode }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  if (user.role !== role) {
+    return (
+      <div className="mx-auto max-w-md p-8 text-center">
+        <h1 className="text-xl font-semibold">Not authorised</h1>
+        <p className="mt-2 text-sm text-muted">Your {user.role} account cannot open this page.</p>
+        <a href={`/${user.role}`} className="mt-4 inline-block text-accent underline">Go to your dashboard</a>
+      </div>
+    )
+  }
+  return <>{children}</>
+}
+
+export default function App() {
+  const [user, setUser] = useState<User | null>(null)
+  const [ready, setReady] = useState(false)
+  const [error, setError] = useState<ApiError | null>(null)
+  useEffect(() => {
+    api<{ user: User | null }>('/auth/me/').then(
+      (r) => { setUser(r.user); setReady(true) },
+      (e) => { setError(e); setReady(true) },
+    )
+  }, [])
+  if (!ready) return <><SimBanner /><Loading /></>
+  if (error) return <><SimBanner /><div className="p-6"><ErrorBox error={error} /></div></>
+  const home = user ? `/${user.role}` : '/login'
+  return (
+    <AuthCtx.Provider value={{ user, setUser }}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={user ? <Navigate to={home} replace /> : <Login />} />
+          <Route path="/customer" element={<Protected role="customer"><Customer /></Protected>} />
+          <Route path="/merchant" element={<Protected role="merchant"><Merchant /></Protected>} />
+          <Route path="/admin" element={<Protected role="admin"><Admin /></Protected>} />
+          <Route path="*" element={<Navigate to={home} replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthCtx.Provider>
+  )
+}

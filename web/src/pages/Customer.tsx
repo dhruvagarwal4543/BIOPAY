@@ -1,0 +1,56 @@
+import { useState } from 'react'
+import { api, ApiError, when, type Enrollment } from '../api'
+import { Badge, Balance, Empty, ErrorBox, Loading, MockNotice, Panel, PaymentsTable, useApi } from '../ui'
+import Layout from './Layout'
+
+export default function Customer() {
+  const { data, error, reload } = useApi<{ balance: number; enrollments: Enrollment[] }>('/customer/overview/')
+  const [actionError, setActionError] = useState<ApiError | null>(null)
+  const requestDeletion = async (e: Enrollment) => {
+    if (!confirm('Request deletion of this fingerprint enrollment? Payments with it stop immediately.')) return
+    try {
+      setActionError(null)
+      await api(`/customer/enrollments/${e.id}/deletion-request/`, { method: 'POST' })
+      reload()
+    } catch (err) {
+      setActionError(err as ApiError)
+    }
+  }
+  return (
+    <Layout title="My wallet">
+      {error ? <ErrorBox error={error} retry={reload} /> : !data ? <Loading /> : (
+        <>
+          <Balance label="Wallet balance" value={data.balance} />
+          <Panel title="Biometric enrollment & consent">
+            <div className="space-y-4">
+              <MockNotice />
+              {actionError && <ErrorBox error={actionError} />}
+              {data.enrollments.length === 0 ? <Empty>No enrollment. Ask a supervisor to enroll you.</Empty> : (
+                <ul className="divide-y divide-line">
+                  {data.enrollments.map((e) => (
+                    <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div className="text-sm">
+                        <p className="font-medium">{e.merchant} · {e.terminal} <Badge>{e.status}</Badge> <Badge>{e.source}</Badge></p>
+                        <p className="mt-1 text-xs text-muted">
+                          Consent given {when(e.consented_at)}
+                          {e.deletion_requested_at && ` · Deletion requested ${when(e.deletion_requested_at)}`}
+                        </p>
+                      </div>
+                      {e.status === 'ACTIVE' && (
+                        <button onClick={() => requestDeletion(e)} className="rounded border border-bad/50 px-3 py-1.5 text-sm text-bad hover:bg-bad/10">
+                          Request deletion
+                        </button>
+                      )}
+                      {e.status === 'DELETION_REQUESTED' && <span className="text-xs text-warn">Awaiting supervisor</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </Panel>
+        </>
+      )}
+      <Panel title="Transaction history"><PaymentsTable path="/customer/payments/" show={['merchant']} /></Panel>
+    </Layout>
+  )
+}
