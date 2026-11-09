@@ -283,3 +283,14 @@ PROJECT_PLAN.md      Broader project plan and updated constraints
 The full project has five teammates, roughly one week remaining, and college hardware whose exact components are unknown. This backend slice is deliberately separate from Android, ESP32, BLE, and real-money work. There is no biometric verification (it is simulated), no refunds, no funding API, and no production deployment configuration here. It is a local backend demonstration; do not invite volunteers to supply biometric data to it.
 
 For framework behavior used here, see the official [Django transaction guide](https://docs.djangoproject.com/en/5.2/topics/db/transactions/), [Django row-locking API](https://docs.djangoproject.com/en/5.2/ref/models/querysets/#select-for-update), and [DRF serializer field documentation](https://www.django-rest-framework.org/api-guide/fields/). Runtime versions are pinned in `requirements.txt`.
+
+## Demo sequence (local, simulated)
+
+1. Backend as above with `BIOPAY_ENABLE_DEMO_API=true` and `DJANGO_DEBUG=true`; `python manage.py seed_demo_users` (needs `BIOPAY_DEMO_PASSWORD`).
+2. `cd web && npm install && npm run dev`, open http://localhost:5173/.
+3. Register a customer (consent box), then "Enroll (MOCK)" on the dashboard; note it takes the next free slot (the demo customer holds slot 1).
+4. Sign in as `demo-merchant` -> Open simulator -> enter that slot and an amount -> Pay. Retry after a network error reuses the same payment UUID.
+5. Sign in as `demo-admin`: reconciliation must say SUCCESS; the audit log lists register/enroll/revoke actions.
+
+**Warning:** the simulator and mock enrollment let a merchant charge any enrolled slot on its own terminal. They exist for development only; keep `BIOPAY_ENABLE_DEMO_API` off on any shared host.
+Tests: `python manage.py test` (backend), `cd web && npx playwright test` (browser, mocked API), `make -C firmware test`.

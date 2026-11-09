@@ -20,8 +20,7 @@ async function signIn(page: Page, username: string, password = 'correct-password
 
 test('login page renders with the simulation label', async ({ page }) => {
   await mockApi(page)
-  await page.goto('/')
-  await expect(page).toHaveURL(/\/login$/)
+  await page.goto('/login')
   await expect(page.getByText(SIM).first()).toBeVisible()
   await expect(page.getByRole('heading', { name: 'BioPay' })).toBeVisible()
   await expect(page.getByLabel('Username')).toBeVisible()
@@ -104,4 +103,34 @@ test('payment history empty and error states', async ({ page }) => {
   state.paymentsStatus = 200
   await page.getByRole('button', { name: 'Retry' }).click()
   await expect(page.getByRole('row').filter({ hasText: 'SUCCESS' })).toBeVisible()
+})
+
+test('landing renders without the API, shows all six scenes and the simulation label', async ({ page }) => {
+  // No mockApi: the public page must not depend on the backend being reachable.
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Your Identity. Your Payment.' })).toBeVisible()
+  await expect(page.getByText(SIM)).toBeVisible()
+  await expect(page.locator('main section')).toHaveCount(6)
+  await page.getByRole('link', { name: 'Launch Demo' }).first().click()
+  await expect(page).toHaveURL(/\/login$/)
+})
+
+test('landing with reduced motion still shows every scene copy (no scroll hijack, no horizontal scroll)', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'The Digital Wallet' })).toBeAttached()
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
+  expect(overflow).toBe(false)
+})
+
+test('register requires consent and a strong password before the server is asked', async ({ page }) => {
+  const state = await mockApi(page)
+  await page.goto('/register')
+  await page.getByLabel('Full name').fill('Vol One')
+  await page.getByLabel(/Username/).fill('vol-one')
+  await page.getByLabel(/Password/).fill('short')
+  await page.getByRole('button', { name: 'Register' }).click()
+  expect(state.calls['/auth/register/'] ?? 0).toBe(0) // browser validation blocked the submit
+  await expect(page.getByRole('checkbox')).not.toBeChecked()
 })

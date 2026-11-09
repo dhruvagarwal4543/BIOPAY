@@ -11,3 +11,4 @@ htmlcov/
 *.log
 *.dump
 *.sql
+firmware/src/config.h

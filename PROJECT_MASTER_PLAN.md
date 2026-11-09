@@ -1,26 +1,21 @@
 # BioPay master plan (source of truth across sessions)
 
-Kept as one file: plan + progress + acceptance. Test evidence: TEST_REPORT.md. Blockers: BLOCKERS.md.
+Plan + progress in one file. Evidence: TEST_REPORT.md. Blockers: BLOCKERS.md. Design: ARCHITECTURE.md.
 
-## Verified baseline (2026-11-09)
-- Django/DRF + PostgreSQL; models: Customer, Merchant, Wallet, Terminal, Enrollment, Payment, LedgerEntry.
-- Backend: 80 tests pass. Web: React 19 + TS + Vite + Tailwind 4; `tsc -b` and `vite build` pass.
-- Routes today: /login, /customer, /merchant, /admin. No landing page, no 3D, no registration, no firmware.
-
-## Phases
 | # | Phase | Status |
 |---|-------|--------|
 | 0 | Audit + baseline | DONE |
-| 1 | Design system / route map | PENDING |
-| 2 | Cinematic 3D landing (6 scenes) | IN PROGRESS: code + 2D fallback verified; 3D canvas NOT visually verified |
-| 3 | Registration + consent onboarding | PENDING |
-| 4 | Customer app (wallet, tx detail, profile) | PENDING |
-| 5 | Merchant app (terminal view) | PENDING |
-| 6 | Admin (customers/merchants/audit) | PENDING |
-| 7 | Terminal simulator UI | PENDING |
-| 8 | Firmware (ESP32-S3) + HAL mock | PENDING (hardware BLOCKED) |
-| 9 | Full QA/security/perf | PENDING |
-| 10 | Delivery docs + demo | PENDING |
+| 1 | Design system / routes | DONE (existing tokens reused; routes in ARCHITECTURE.md) |
+| 2 | Cinematic 3D landing | DONE, verified in software-WebGL Chromium (desktop+mobile screenshots). Not checked: real GPU frame rate |
+| 3 | Registration + consent | DONE (backend tests + real browser) |
+| 4 | Customer app | DONE: wallet, history, tx detail, enroll/withdraw. No separate /wallet, /profile pages (merged into /customer) |
+| 5 | Merchant app | DONE: dashboard, history, detail, terminals, simulator |
+| 6 | Admin | DONE: overview, revoke, reconciliation, audit log. Customers/merchants are panels, not separate routes |
+| 7 | Terminal simulator | DONE (dev-only, real payment service) |
+| 8 | Firmware | PARTIAL: payflow logic tested natively; ESP32 glue BLOCKED on hardware |
+| 9 | QA/security/perf | PARTIAL: see TEST_REPORT.md for what was and was not run |
+| 10 | Delivery docs | DONE: README demo sequence, ARCHITECTURE.md |
 
-## Next step
-Phase 2: add three/@react-three/fiber/drei/gsap, build `/` landing, keep existing app routes untouched.
+## Resume point
+Next: (a) before real hardware, replace the DEBUG gate on the terminal API with a real-sensor mode (BLOCKERS #2);
+(b) axe accessibility run, keyboard walk, GPU frame-rate check; (c) HTTPS/production settings pass.

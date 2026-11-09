@@ -1,13 +1,15 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { api, ApiError, type Role, type User } from './api'
 import Admin from './pages/Admin'
 import Customer from './pages/Customer'
-import Landing from './landing/Landing'
 import Login from './pages/Login'
 import Merchant from './pages/Merchant'
 import { AdminAuditPage, PaymentDetail, Register, Simulator } from './pages/Extra'
 import { ErrorBox, Loading, SimBanner } from './ui'
+
+// gsap + three load only for the public landing, not for the app pages.
+const Landing = lazy(() => import('./landing/Landing'))
 
 interface Auth { user: User | null; setUser: (u: User | null) => void }
 const AuthCtx = createContext<Auth>({ user: null, setUser: () => {} })
@@ -30,7 +32,7 @@ function Protected({ role, children }: { role: Role; children: ReactNode }) {
 
 export default function App() {
   // Public landing must not depend on the API being reachable.
-  if (window.location.pathname === '/') return <Landing />
+  if (window.location.pathname === '/') return <Suspense fallback={<Loading />}><Landing /></Suspense>
   return <AppShell />
 }
 

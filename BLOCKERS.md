@@ -1,4 +1,5 @@
 # Blockers
-- Hardware (ESP32-S3 + fingerprint sensor): model/pins unknown. All physical verification BLOCKED.
-- `.env` is guarded from being read in this session; backend tests ran with throwaway env values (local trust auth, db `postgres`).
-- 3D visual verification needs a WebGL-capable browser (Aside, or headed `/open-gstack-browser`). Not available in this headless run.
+1. Hardware (ESP32-S3 + fingerprint sensor): model/pins unknown. Wiring, flashing, real enrollment/match, real payment: all BLOCKED/UNCHECKED.
+2. The terminal API (`/api/terminal/*`) only works when `DJANGO_DEBUG=true` and `BIOPAY_ENABLE_DEMO_API=true` (it is gated as a mock). A real device needs a non-debug "real sensor" mode and HTTPS first. Do this when hardware arrives.
+3. `.env` cannot be read in this session (guard hook); tests used throwaway env values and a scratch DB `biopay_e2e`.
+4. Not run: axe accessibility scan, full keyboard walk, GPU frame-rate on real hardware, load/concurrency beyond the existing PostgreSQL race tests.

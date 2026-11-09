@@ -1,6 +1,6 @@
 import type { Page, Route } from '@playwright/test'
 
-export const SIM = 'SIMULATED — NO REAL MONEY'
+export const SIM = 'SIMULATED PAYMENT — NO REAL MONEY'
 export const MOCK_FP = 'DEVELOPMENT SIMULATION — NOT A PHYSICAL FINGERPRINT MATCH'
 
 type Role = 'customer' | 'merchant'

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { api, ApiError, money, when, type Page, type Payment } from './api'
 
-export const SIM = 'SIMULATED — NO REAL MONEY'
+export const SIM = 'SIMULATED PAYMENT — NO REAL MONEY'
 export const MOCK_FP = 'DEVELOPMENT SIMULATION — NOT A PHYSICAL FINGERPRINT MATCH'
 
 export function SimBanner() {
