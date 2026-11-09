@@ -44,6 +44,6 @@ class Command(BaseCommand):
         Enrollment.objects.get_or_create(
             terminal=terminal, sensor_slot=1, status=Enrollment.Status.ACTIVE,
             defaults={"customer": Customer.objects.get(code=DEMO_CUSTOMER_CODE),
-                      "consented_at": timezone.now()},
+                      "consented_at": timezone.now(), "simulator_allowed": True},
         )
         self.stdout.write("Demo logins ready. MOCK enrollment: terminal slot 1 (development simulation).")

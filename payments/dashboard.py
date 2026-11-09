@@ -105,6 +105,7 @@ def enrollment_row(e):
         "id": e.pk, "customer": e.customer.name, "terminal": e.terminal.name,
         "merchant": e.terminal.merchant.name, "status": e.status, "source": e.source,
         "consented_at": e.consented_at, "deletion_requested_at": e.deletion_requested_at,
+        "simulator_allowed": e.simulator_allowed,
     }
 
 

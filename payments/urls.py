@@ -30,6 +30,7 @@ web_urlpatterns = [
     path("auth/register/", a.RegisterView.as_view()),
     path("customer/terminals/", a.CustomerTerminals.as_view()),
     path("customer/enroll/", a.CustomerEnroll.as_view()),
+    path("customer/enrollments/<int:pk>/simulator/", a.SimulatorConsent.as_view()),
     path("customer/payments/<str:pk>/", a.CustomerPaymentDetail.as_view()),
     path("merchant/payments/<str:pk>/", a.MerchantPaymentDetail.as_view()),
     path("merchant/simulate/", a.MerchantSimulate.as_view()),

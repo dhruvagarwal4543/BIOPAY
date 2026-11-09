@@ -91,6 +91,8 @@ class Enrollment(models.Model):
     revoked_at = models.DateTimeField(null=True, blank=True)
     # Software development only. Becomes a real sensor type when hardware is integrated.
     source = models.CharField(max_length=16, default="MOCK", editable=False)
+    # The customer's own opt-in for the merchant simulator (no finger needed). Off unless they turn it on.
+    simulator_allowed = models.BooleanField(default=False)
 
     class Meta:
         constraints = [

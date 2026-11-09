@@ -76,7 +76,7 @@ def pay_demo(*, payment_id, amount):
 
 
 @transaction.atomic(durable=True)
-def pay_at_terminal(*, terminal, sensor_slot, payment_id, amount):
+def pay_at_terminal(*, terminal, sensor_slot, payment_id, amount, require_simulator_consent=False):
     """Payer and merchant come from server records: the slot's enrollment and the terminal."""
     _check_amount(amount)
     # Lock order is fixed everywhere: terminal -> enrollment -> payment row -> wallets (by pk).
@@ -87,12 +87,11 @@ def pay_at_terminal(*, terminal, sensor_slot, payment_id, amount):
     if terminal.revoked_at is not None:
         raise TerminalRevoked
     # Locking the enrollment makes a concurrent revoke/deletion request wait or win cleanly.
-    enrollment = (
-        Enrollment.objects.select_for_update()
-        .select_related("customer")
-        .filter(terminal=terminal, sensor_slot=sensor_slot, status=Enrollment.Status.ACTIVE)
-        .first()
-    )
+    candidates = Enrollment.objects.select_for_update().select_related("customer").filter(
+        terminal=terminal, sensor_slot=sensor_slot, status=Enrollment.Status.ACTIVE)
+    if require_simulator_consent:  # checked under the same lock, so withdrawing consent wins or waits
+        candidates = candidates.filter(simulator_allowed=True)
+    enrollment = candidates.first()
     if enrollment is None:
         # The slot may have been revoked after this exact request already ran. Return that stored
         # result so a terminal that lost the reply learns the truth. Nothing is written, and only

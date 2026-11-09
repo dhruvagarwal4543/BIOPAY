@@ -107,9 +107,34 @@ class CustomerEnroll(APIView):
             # Never reuse a slot number, even a revoked one: old records must not alias a new person.
             top = Enrollment.objects.filter(terminal=terminal).aggregate(m=Max("sensor_slot"))["m"]
             e = Enrollment.objects.create(customer=customer, terminal=terminal,
-                                          sensor_slot=(top or 0) + 1, consented_at=timezone.now())
-            AuditEvent.log(request.user.get_username(), "enrollment.created", f"enrollment {e.pk} (MOCK)")
+                                          sensor_slot=(top or 0) + 1, consented_at=timezone.now(),
+                                          simulator_allowed=d.get("allow_simulator") is True)
+            AuditEvent.log(request.user.get_username(), "enrollment.created",
+                           f"enrollment {e.pk} (MOCK, simulator {'on' if e.simulator_allowed else 'off'})")
         return Response({"enrollment": enrollment_row(e)}, status=status.HTTP_201_CREATED)
+
+
+class SimulatorConsent(APIView):
+    """The customer turns merchant-simulator payments on or off for one of their own enrollments."""
+
+    permission_classes = [IsCustomer]
+
+    def post(self, request, pk):
+        if not _mock_enabled():
+            raise NotFound("Simulator is disabled.")
+        allowed = (request.data if isinstance(request.data, dict) else {}).get("allowed")
+        if type(allowed) is not bool:
+            raise serializers.ValidationError({"allowed": ["true or false."]})
+        with transaction.atomic():
+            try:  # the row lock orders this against an in-flight simulator payment
+                e = Enrollment.objects.select_for_update().select_related("terminal__merchant", "customer").get(
+                    pk=pk, customer=request.user.customer, status=Enrollment.Status.ACTIVE)
+            except Enrollment.DoesNotExist:
+                raise NotFound("Enrollment not found.") from None
+            e.simulator_allowed = allowed
+            e.save(update_fields=["simulator_allowed"])
+            AuditEvent.log(request.user.get_username(), "enrollment.simulator_" + ("on" if allowed else "off"), f"enrollment {pk}")
+        return Response({"enrollment": enrollment_row(e)})
 
 
 def _detail(request, qs, serializer, pk):
@@ -165,7 +190,7 @@ class MerchantSimulate(APIView):
         except Terminal.DoesNotExist:
             raise NotFound("Terminal not found.") from None
         try:
-            payment, created = pay_at_terminal(terminal=terminal, **v)
+            payment, created = pay_at_terminal(terminal=terminal, require_simulator_consent=True, **v)
         except TerminalRevoked:  # 401 would sign the browser out; this is a 403 for a human session
             raise PermissionDenied("This terminal has been revoked.", code="terminal_revoked") from None
         data = {"payment": PaymentSerializer(payment).data, "replayed": not created,
