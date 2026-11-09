@@ -144,3 +144,17 @@ class LedgerEntry(models.Model):
             models.CheckConstraint(condition=~Q(delta=0), name="ledger_nonzero_delta"),
             models.UniqueConstraint(fields=["payment", "wallet"], name="ledger_once_per_wallet"),
         ]
+
+
+class AuditEvent(models.Model):
+    """Append-only operational log. shortcut: immutability is by convention (no update/delete
+    endpoint), not a DB trigger; add one before real use."""
+
+    actor = models.CharField(max_length=150)
+    action = models.CharField(max_length=40)
+    detail = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def log(cls, actor, action, detail=""):
+        cls.objects.create(actor=str(actor), action=action, detail=detail)

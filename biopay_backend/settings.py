@@ -61,6 +61,7 @@ DATABASES = {
 
 BIOPAY_ENABLE_DEMO_API = os.environ.get("BIOPAY_ENABLE_DEMO_API", "false").lower() == "true"
 BIOPAY_DEMO_TOKEN = os.environ.get("BIOPAY_DEMO_TOKEN", "")
+BIOPAY_SIGNUP_GRANT = int(os.environ.get("BIOPAY_SIGNUP_GRANT", "100"))
 BIOPAY_MAX_PAYMENT = int(os.environ.get("BIOPAY_MAX_PAYMENT", "100"))
 if not 1 <= BIOPAY_MAX_PAYMENT <= 2**63 - 1:
     raise ImproperlyConfigured("BIOPAY_MAX_PAYMENT must be a positive signed 64-bit integer.")
@@ -76,5 +77,11 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "payments.api_errors.exception_handler",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
-    "DEFAULT_THROTTLE_RATES": {"login": "10/min"},
+    "DEFAULT_THROTTLE_RATES": {"login": "10/min", "register": "10/hour"},
 }
+
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]

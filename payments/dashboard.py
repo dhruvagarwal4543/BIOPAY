@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 
 from .api_errors import DemoNotReady
 from .constants import SIMULATION_WARNING
-from .models import Customer, Enrollment, Merchant, Payment, Terminal, Wallet
+from .models import AuditEvent, Customer, Enrollment, Merchant, Payment, Terminal, Wallet
 from .permissions import IsAdmin, IsCustomer, IsMerchant, role_of
 from .serializers import MerchantPaymentSerializer, WebPaymentSerializer
 from .services import reconcile
@@ -146,6 +146,7 @@ class DeletionRequest(APIView):
             enrollment.status = Enrollment.Status.DELETION_REQUESTED
             enrollment.deletion_requested_at = timezone.now()
             enrollment.save(update_fields=["status", "deletion_requested_at"])
+            AuditEvent.log(request.user.get_username(), "enrollment.deletion_requested", f"enrollment {pk}")
         return Response({"enrollment": enrollment_row(enrollment)})
 
 
@@ -203,6 +204,8 @@ class RevokeTerminal(APIView):
         updated = Terminal.objects.filter(pk=pk, revoked_at__isnull=True).update(revoked_at=timezone.now())
         if not updated and not Terminal.objects.filter(pk=pk).exists():
             raise NotFound("Terminal not found.")
+        if updated:
+            AuditEvent.log(request.user.get_username(), "terminal.revoked", f"terminal {pk}")
         return Response({"terminal": terminal_row(Terminal.objects.select_related("merchant").get(pk=pk))})
 
 
@@ -212,8 +215,10 @@ class RevokeEnrollment(APIView):
     permission_classes = [IsAdmin]
 
     def post(self, request, pk):
-        Enrollment.objects.filter(pk=pk).exclude(status=Enrollment.Status.REVOKED).update(
+        updated = Enrollment.objects.filter(pk=pk).exclude(status=Enrollment.Status.REVOKED).update(
             status=Enrollment.Status.REVOKED, revoked_at=timezone.now())
+        if updated:
+            AuditEvent.log(request.user.get_username(), "enrollment.revoked", f"enrollment {pk}")
         try:
             enrollment = Enrollment.objects.select_related("customer", "terminal__merchant").get(pk=pk)
         except Enrollment.DoesNotExist:

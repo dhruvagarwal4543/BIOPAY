@@ -1,5 +1,6 @@
 from django.urls import path
 
+from . import app_api as a
 from . import dashboard as d
 from .views import (
     HistoryView, PaymentStatusView, PaymentView, TerminalPaymentStatusView,
@@ -26,6 +27,13 @@ web_urlpatterns = [
     path("auth/login/", d.LoginView.as_view()),
     path("auth/logout/", d.LogoutView.as_view()),
     path("auth/me/", d.MeView.as_view()),
+    path("auth/register/", a.RegisterView.as_view()),
+    path("customer/terminals/", a.CustomerTerminals.as_view()),
+    path("customer/enroll/", a.CustomerEnroll.as_view()),
+    path("customer/payments/<str:pk>/", a.CustomerPaymentDetail.as_view()),
+    path("merchant/payments/<str:pk>/", a.MerchantPaymentDetail.as_view()),
+    path("merchant/simulate/", a.MerchantSimulate.as_view()),
+    path("admin/audit/", a.AdminAudit.as_view()),
     path("customer/overview/", d.CustomerOverview.as_view()),
     path("customer/payments/", d.CustomerPayments.as_view()),
     path("customer/enrollments/<int:pk>/deletion-request/", d.DeletionRequest.as_view()),
