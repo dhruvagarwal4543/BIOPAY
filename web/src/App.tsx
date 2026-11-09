@@ -3,9 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { api, ApiError, type Role, type User } from './api'
 import Admin from './pages/Admin'
 import Customer from './pages/Customer'
+import Layout from './pages/Layout'
 import Login from './pages/Login'
 import Merchant from './pages/Merchant'
-import { AdminAuditPage, PaymentDetail, Register, Simulator } from './pages/Extra'
+import { AdminAuditPage, PaymentDetail, Profile, Register, Simulator } from './pages/Extra'
 import { ErrorBox, Loading, SimBanner } from './ui'
 
 // gsap + three load only for the public landing, not for the app pages.
@@ -20,11 +21,13 @@ function Protected({ role, children }: { role: Role; children: ReactNode }) {
   if (!user) return <Navigate to="/login" replace />
   if (user.role !== role) {
     return (
-      <div className="mx-auto max-w-md p-8 text-center">
-        <h1 className="text-xl font-semibold">Not authorised</h1>
-        <p className="mt-2 text-sm text-muted">Your {user.role} account cannot open this page.</p>
-        <a href={`/${user.role}`} className="mt-4 inline-block text-accent underline">Go to your dashboard</a>
-      </div>
+      <Layout title="Not authorised">
+        <div className="mx-auto max-w-md p-8 text-center">
+          <h2 className="text-xl font-semibold">Not authorised</h2>
+          <p className="mt-2 text-sm text-muted">Your {user.role} account cannot open this page.</p>
+          <a href={`/${user.role}`} className="mt-4 inline-block text-accent underline">Go to your dashboard</a>
+        </div>
+      </Layout>
     )
   }
   return <>{children}</>
@@ -61,6 +64,8 @@ function AppShell() {
           <Route path="/merchant/payments/:id" element={<Protected role="merchant"><PaymentDetail base="merchant" /></Protected>} />
           <Route path="/merchant/terminal" element={<Protected role="merchant"><Simulator /></Protected>} />
           <Route path="/admin/audit" element={<Protected role="admin"><AdminAuditPage /></Protected>} />
+          <Route path="/wallet" element={<Navigate to="/customer" replace />} />
+          <Route path="/profile" element={<Protected role="customer"><Profile /></Protected>} />
           <Route path="/merchant" element={<Protected role="merchant"><Merchant /></Protected>} />
           <Route path="/admin" element={<Protected role="admin"><Admin /></Protected>} />
           <Route path="*" element={<Navigate to={home} replace />} />

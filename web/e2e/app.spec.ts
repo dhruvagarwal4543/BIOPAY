@@ -70,8 +70,9 @@ test('customer and merchant navigation', async ({ page }) => {
   await expect(page.getByText('460').first()).toBeVisible()
   await expect(page.getByText(MOCK_FP)).toBeVisible()
   await page.goto('/merchant') // wrong role: a message, not a logout
-  await expect(page.getByText('Not authorised')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Sign out' }).or(page.getByRole('link', { name: 'Go to your dashboard' }))).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Not authorised' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible() // never a dead end
+  await expect(page.getByRole('link', { name: 'Go to your dashboard' })).toBeVisible()
   await page.goto('/customer')
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(page).toHaveURL(/\/login$/)

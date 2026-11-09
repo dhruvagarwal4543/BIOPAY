@@ -1,9 +1,14 @@
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event, Timer
+from unittest.mock import patch
 from uuid import uuid4
+
+from django.db import connection, connections
 
 from django.test import override_settings
 from rest_framework.test import APIClient
 
-from payments.models import AuditEvent, Customer, Enrollment, LedgerEntry, Wallet
+from payments.models import AuditEvent, Customer, Enrollment, LedgerEntry, Payment, Wallet
 from payments.services import reconcile
 
 from .test_web import PASSWORD, Base, login_client
@@ -213,3 +218,46 @@ class SimulatorAuthorizationTests(Base):
         self.allow(self.enr_alice, False)
         actions = set(AuditEvent.objects.values_list("action", flat=True))
         self.assertTrue({"enrollment.simulator_on", "enrollment.simulator_off"} <= actions)
+
+
+class SimulatorConsentRaceTest(Base):
+    def test_withdrawing_consent_waits_for_an_in_flight_payment_then_blocks_the_next(self):
+        """The payment holds the enrollment row lock; the consent switch must queue behind it."""
+        Enrollment.objects.update(simulator_allowed=True)
+        in_txn, may_finish = Event(), Event()
+        original = Payment.objects.get_or_create
+
+        def pause(*a, **k):
+            in_txn.set()
+            may_finish.wait(timeout=10)
+            return original(*a, **k)
+
+        body = {"payment_id": str(uuid4()), "amount": 5, "sensor_slot": 1, "terminal_id": self.term_a.pk}
+
+        def pay():
+            try:
+                return login_client(self.shop_a.user.username).post("/api/merchant/simulate/", body, format="json").status_code
+            finally:
+                connections.close_all()
+
+        def withdraw():
+            try:
+                self.assertTrue(in_txn.wait(timeout=10))
+                with connection.cursor() as c:
+                    c.execute("SET lock_timeout = '10s'")
+                Timer(0.7, may_finish.set).start()
+                status = login_client(self.alice.user.username).post(
+                    f"/api/customer/enrollments/{self.enr_alice.pk}/simulator/", {"allowed": False}, format="json").status_code
+                return status, may_finish.is_set()  # False here would mean it did not wait
+            finally:
+                connections.close_all()
+
+        with patch.object(Payment.objects, "get_or_create", side_effect=pause):
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                pf, wf = pool.submit(pay), pool.submit(withdraw)
+                pay_status, (withdraw_status, waited) = pf.result(), wf.result()
+        self.assertEqual((pay_status, withdraw_status, waited), (201, 200, True))
+        again = login_client(self.shop_a.user.username).post(
+            "/api/merchant/simulate/", {**body, "payment_id": str(uuid4())}, format="json")
+        self.assertEqual(again.status_code, 403)  # consent is off now
+        self.assertEqual(LedgerEntry.objects.count(), 2)

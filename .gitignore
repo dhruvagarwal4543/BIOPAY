@@ -12,3 +12,5 @@ htmlcov/
 *.dump
 *.sql
 firmware/src/config.h
+.demo-credentials
+.demo-pids

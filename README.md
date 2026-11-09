@@ -286,6 +286,8 @@ For framework behavior used here, see the official [Django transaction guide](ht
 
 ## Demo sequence (local, simulated)
 
+**Quick start:** `scripts/demo.sh start` runs everything on an isolated `biopay_demo` database (details in `docs/DEMO_SCRIPT.md`). The manual steps below are the same flow.
+
 1. Backend as above with `BIOPAY_ENABLE_DEMO_API=true` and `DJANGO_DEBUG=true`; `python manage.py seed_demo_users` (needs `BIOPAY_DEMO_PASSWORD`).
 2. `cd web && npm install && npm run dev`, open http://localhost:5173/.
 3. Register a customer (consent box), then "Enroll (MOCK)" on the dashboard; note it takes the next free slot (the demo customer holds slot 1).

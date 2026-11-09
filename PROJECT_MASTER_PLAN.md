@@ -13,9 +13,12 @@ Plan + progress in one file. Evidence: TEST_REPORT.md. Blockers: BLOCKERS.md. De
 | 6 | Admin | DONE: overview, revoke, reconciliation, audit log. Customers/merchants are panels, not separate routes |
 | 7 | Terminal simulator | DONE (dev-only, real payment service) |
 | 8 | Firmware | PARTIAL: payflow logic tested natively; ESP32 glue BLOCKED on hardware |
-| 9 | QA/security/perf | PARTIAL: see TEST_REPORT.md for what was and was not run |
-| 10 | Delivery docs | DONE: README demo sequence, ARCHITECTURE.md |
+| 9 | QA/security/perf | DONE for software except items listed under NOT done in TEST_REPORT.md |
+| 10 | Delivery docs | DONE: README, ARCHITECTURE.md, docs/ (college report, demo script, presentation outline), firmware/INTEGRATION_PLAN.md |
+
+## Done since last checkpoint
+Simulator needs per-enrollment customer consent; /wallet, /profile, nav; axe + responsive tests; real-stack demo script; scripts/demo.sh; college docs.
 
 ## Resume point
-Next: (a) before real hardware, replace the DEBUG gate on the terminal API with a real-sensor mode (BLOCKERS #2);
-(b) axe accessibility run, keyboard walk, GPU frame-rate check; (c) HTTPS/production settings pass.
+Next: (a) when hardware arrives: pick parts, follow firmware/INTEGRATION_PLAN.md; add a real-sensor mode to the terminal API (BLOCKERS #2) and HTTPS;
+(b) screen-reader pass and GPU frame-rate check; (c) production settings pass.

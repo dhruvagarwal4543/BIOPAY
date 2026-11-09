@@ -54,7 +54,7 @@ export function EnrollPanel({ onDone }: { onDone: () => void }) {
     const f = new FormData(e.currentTarget)
     try {
       setError(null)
-      await api('/customer/enroll/', { method: 'POST', body: { terminal_id: Number(f.get('terminal')), consent: f.get('consent') === 'on' } })
+      await api('/customer/enroll/', { method: 'POST', body: { terminal_id: Number(f.get('terminal')), consent: f.get('consent') === 'on', allow_simulator: f.get('sim') === 'on' } })
       onDone()
     } catch (err) { setError(err as ApiError) }
   }
@@ -66,8 +66,44 @@ export function EnrollPanel({ onDone }: { onDone: () => void }) {
         {data.terminals.map((t) => <option key={t.id} value={t.id}>{t.merchant} · {t.name}</option>)}
       </select>
       <label className="flex gap-2 text-sm"><input name="consent" type="checkbox" required className="mt-1" /><span>I consent to enrolling a simulated fingerprint on this terminal. I can withdraw at any time.</span></label>
+      <label className="flex gap-2 text-sm"><input name="sim" type="checkbox" className="mt-1" /><span>Also allow the merchant simulator to charge this enrollment (demo only, you can switch it off any time).</span></label>
       <button className="rounded bg-accent px-3 py-1.5 text-sm font-semibold text-ink-950">Enroll (MOCK)</button>
     </form>
+  )
+}
+
+export function SimulatorToggle({ e, onDone }: { e: { id: number; simulator_allowed: boolean }; onDone: () => void }) {
+  const [error, setError] = useState<ApiError | null>(null)
+  const flip = async () => {
+    try {
+      setError(null)
+      await api(`/customer/enrollments/${e.id}/simulator/`, { method: 'POST', body: { allowed: !e.simulator_allowed } })
+      onDone()
+    } catch (err) { setError(err as ApiError) }
+  }
+  return (
+    <span className="inline-flex flex-col items-end gap-1">
+      <button type="button" aria-pressed={e.simulator_allowed} onClick={flip} className="rounded border border-line px-3 py-1.5 text-sm hover:bg-ink-800">
+        Merchant simulator: {e.simulator_allowed ? 'ON' : 'OFF'}
+      </button>
+      {error && <span role="alert" className="text-xs text-bad">{error.message}</span>}
+    </span>
+  )
+}
+
+export function Profile() {
+  const { user } = useAuth()
+  return (
+    <Layout title="Profile">
+      <Panel title="Account">
+        <dl className="grid gap-3 text-sm sm:grid-cols-2">
+          <div><dt className="text-muted">Name</dt><dd>{user?.name}</dd></div>
+          <div><dt className="text-muted">Username</dt><dd>{user?.username}</dd></div>
+          <div><dt className="text-muted">Role</dt><dd>{user?.role}</dd></div>
+        </dl>
+        <p className="mt-4 text-sm text-muted">Fingerprint enrollments, consent and withdrawal are managed on your <Link className="text-accent underline" to="/customer">wallet page</Link>. BioCoins are simulated and have no monetary value.</p>
+      </Panel>
+    </Layout>
   )
 }
 
@@ -101,13 +137,8 @@ export function Simulator() {
   const [outcome, setOutcome] = useState<Outcome>({ kind: 'idle' })
   // One UUID per payment attempt; a retry after a network error reuses it, a new payment makes a new one.
   const [attempt, setAttempt] = useState<{ id: string; sig: string } | null>(null)
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const f = new FormData(e.currentTarget)
-    const body = { terminal_id: Number(f.get('terminal')), sensor_slot: Number(f.get('slot')), amount: Number(f.get('amount')) }
-    const sig = JSON.stringify(body)
-    const id = attempt?.sig === sig && outcome.kind === 'network' ? attempt.id : crypto.randomUUID()
-    setAttempt({ id, sig })
+  const run = async (body: { terminal_id: number; sensor_slot: number; amount: number }, id: string) => {
+    setAttempt({ id, sig: JSON.stringify(body) })
     setOutcome({ kind: 'pending' })
     try {
       const r = await api<{ replayed: boolean }>('/merchant/simulate/', { method: 'POST', body: { ...body, payment_id: id } })
@@ -121,6 +152,16 @@ export function Simulator() {
       else setOutcome({ kind: 'error', msg: a.message })
     }
   }
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const f = new FormData(e.currentTarget)
+    const body = { terminal_id: Number(f.get('terminal')), sensor_slot: Number(f.get('slot')), amount: Number(f.get('amount')) }
+    const sig = JSON.stringify(body)
+    // Reuse the UUID only to finish an unconfirmed payment (network error); otherwise it is a new payment.
+    return run(body, attempt?.sig === sig && outcome.kind === 'network' ? attempt.id : crypto.randomUUID())
+  }
+  // Demo of idempotency: resend the exact last payment. The server must answer "replayed" and charge once.
+  const resend = () => attempt && run(JSON.parse(attempt.sig), attempt.id)
   const tone = outcome.kind === 'success' ? 'text-accent' : outcome.kind === 'pending' || outcome.kind === 'idle' ? 'text-muted' : 'text-bad'
   return (
     <Layout title="Terminal simulator">
@@ -136,6 +177,9 @@ export function Simulator() {
               {outcome.kind === 'network' ? 'Retry payment' : 'Pay'}
             </button>
           </form>
+          {attempt && outcome.kind !== 'pending' && outcome.kind !== 'network' && (
+            <button type="button" onClick={resend} className="mt-3 rounded border border-line px-3 py-1.5 text-sm hover:bg-ink-800">Resend the same payment (same payment ID)</button>
+          )}
           <p role="status" className={`mt-4 text-sm ${tone}`}>
             {outcome.kind === 'idle' ? 'Waiting.' : outcome.kind === 'pending' ? 'Waiting for server confirmation…' : `${outcome.kind.toUpperCase()}: ${outcome.msg}`}
           </p>

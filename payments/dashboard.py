@@ -1,4 +1,5 @@
 """Human web API: session login plus customer, merchant and admin dashboards."""
+from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.db import transaction
 from django.middleware.csrf import get_token
@@ -105,7 +106,7 @@ def enrollment_row(e):
         "id": e.pk, "customer": e.customer.name, "terminal": e.terminal.name,
         "merchant": e.terminal.merchant.name, "status": e.status, "source": e.source,
         "consented_at": e.consented_at, "deletion_requested_at": e.deletion_requested_at,
-        "simulator_allowed": e.simulator_allowed,
+        "simulator_allowed": e.simulator_allowed, "sensor_slot": e.sensor_slot,
     }
 
 
@@ -120,6 +121,7 @@ class CustomerOverview(APIView):
             "warning": SIMULATION_WARNING,
             "customer": {"name": customer.name},
             "balance": wallet.balance,
+            "simulator_enabled": settings.DEBUG and settings.BIOPAY_ENABLE_DEMO_API,
             "enrollments": [enrollment_row(e) for e in enrollments.order_by("-pk")],
         })
 

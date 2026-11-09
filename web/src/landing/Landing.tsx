@@ -1,9 +1,16 @@
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 
 gsap.registerPlugin(ScrollTrigger)
 const Scene = lazy(() => import('./Scene'))
+
+// If the 3D scene throws (lost context, shader failure) the page keeps working as plain sections.
+class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() { return this.state.failed ? null : this.props.children }
+}
 
 const hasWebGL = () => {
   try { return !!document.createElement('canvas').getContext('webgl2') } catch { return false }
@@ -42,7 +49,7 @@ export default function Landing() {
       </div>
       {mode.gl && (
         <div className="fixed inset-0 z-0">
-          <Suspense fallback={null}><Scene progress={progress} still={mode.reduced} /></Suspense>
+          <SceneBoundary><Suspense fallback={<p role="status" className="pt-24 text-center text-sm text-muted">Loading 3D scene…</p>}><Scene progress={progress} still={mode.reduced} /></Suspense></SceneBoundary>
         </div>
       )}
       <nav className="fixed inset-x-0 top-8 z-40 flex items-center justify-between px-6">

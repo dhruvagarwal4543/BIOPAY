@@ -8,7 +8,7 @@ export interface Page<T> { count: number; next: string | null; previous: string 
 export interface Enrollment {
   id: number; customer: string; terminal: string; merchant: string
   status: 'ACTIVE' | 'DELETION_REQUESTED' | 'REVOKED'; source: string
-  consented_at: string; deletion_requested_at: string | null
+  consented_at: string; deletion_requested_at: string | null; simulator_allowed: boolean; sensor_slot: number
 }
 export interface Terminal { id: number; name: string; merchant: string; status: 'ACTIVE' | 'REVOKED'; last_seen: string | null }
 

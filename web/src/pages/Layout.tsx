@@ -1,7 +1,14 @@
 import type { ReactNode } from 'react'
+import { NavLink } from 'react-router-dom'
 import { useAuth } from '../App'
 import { api } from '../api'
 import { SimBanner } from '../ui'
+
+const NAV: Record<string, [string, string][]> = {
+  customer: [['/customer', 'Wallet'], ['/profile', 'Profile']],
+  merchant: [['/merchant', 'Dashboard'], ['/merchant/terminal', 'Simulator']],
+  admin: [['/admin', 'Overview'], ['/admin/audit', 'Audit log']],
+}
 
 export default function Layout({ title, children }: { title: string; children: ReactNode }) {
   const { user, setUser } = useAuth()
@@ -24,6 +31,13 @@ export default function Layout({ title, children }: { title: string; children: R
           </div>
         </div>
       </header>
+      <nav aria-label="Main" className="border-b border-line bg-ink-900/60">
+        <ul className="mx-auto flex max-w-6xl gap-1 px-4 text-sm">
+          {(NAV[user?.role ?? ''] ?? []).map(([to, label]) => (
+            <li key={to}><NavLink to={to} end className={({ isActive }) => `inline-block px-3 py-2 ${isActive ? 'border-b-2 border-accent text-fg' : 'text-muted hover:text-fg'}`}>{label}</NavLink></li>
+          ))}
+        </ul>
+      </nav>
       <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
         <h1 className="text-2xl font-semibold tracking-tight sm:hidden">{title}</h1>
         {children}
