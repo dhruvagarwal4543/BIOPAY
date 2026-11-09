@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { api, ApiError, type Role, type User } from './api'
 import Admin from './pages/Admin'
 import Customer from './pages/Customer'
+import Landing from './landing/Landing'
 import Login from './pages/Login'
 import Merchant from './pages/Merchant'
 import { ErrorBox, Loading, SimBanner } from './ui'
@@ -27,6 +28,12 @@ function Protected({ role, children }: { role: Role; children: ReactNode }) {
 }
 
 export default function App() {
+  // Public landing must not depend on the API being reachable.
+  if (window.location.pathname === '/') return <Landing />
+  return <AppShell />
+}
+
+function AppShell() {
   const [user, setUser] = useState<User | null>(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<ApiError | null>(null)

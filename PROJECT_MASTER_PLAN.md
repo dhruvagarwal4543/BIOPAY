@@ -12,7 +12,7 @@ Kept as one file: plan + progress + acceptance. Test evidence: TEST_REPORT.md. B
 |---|-------|--------|
 | 0 | Audit + baseline | DONE |
 | 1 | Design system / route map | PENDING |
-| 2 | Cinematic 3D landing (6 scenes) | PENDING |
+| 2 | Cinematic 3D landing (6 scenes) | IN PROGRESS: code + 2D fallback verified; 3D canvas NOT visually verified |
 | 3 | Registration + consent onboarding | PENDING |
 | 4 | Customer app (wallet, tx detail, profile) | PENDING |
 | 5 | Merchant app (terminal view) | PENDING |
