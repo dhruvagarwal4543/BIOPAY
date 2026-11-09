@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api, ApiError, money, when, type Enrollment, type Terminal } from '../api'
 import { Badge, ErrorBox, Loading, MockNotice, Panel, PaymentsTable, Stat, Table, Td, useApi } from '../ui'
+import { AuditPanel } from './Extra'
 import Layout from './Layout'
 
 interface Account { id: number; name: string; balance: number }
@@ -86,6 +87,7 @@ export default function Admin() {
           </Panel>
         </>
       )}
+      <AuditPanel />
       <Panel title="Payment records"><PaymentsTable path="/admin/payments/" show={['payer', 'merchant']} /></Panel>
     </Layout>
   )

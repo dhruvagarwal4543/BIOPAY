@@ -109,3 +109,22 @@ class DetailAndAuditTests(Base):
         self.assertEqual(rows[0]["action"], "enrollment.revoked")
         self.assertEqual(rows[0]["actor"], "boss")
         self.assertEqual(login_client(self.alice.user.username).get("/api/admin/audit/").status_code, 403)
+
+
+class AuditCoverageTests(Base):
+    def actions(self):
+        return set(AuditEvent.objects.values_list("action", flat=True))
+
+    def test_every_sensitive_action_is_logged(self):
+        alice = login_client(self.alice.user.username)
+        alice.post(f"/api/customer/enrollments/{self.enr_alice.pk}/deletion-request/")
+        alice.post("/api/customer/enroll/", {"terminal_id": self.term_b.pk, "consent": True}, format="json")
+        admin = login_client("boss")
+        admin.post(f"/api/admin/terminals/{self.term_b.pk}/revoke/")
+        self.assertTrue({"enrollment.deletion_requested", "enrollment.created", "terminal.revoked"} <= self.actions())
+
+    def test_simulator_revoked_error_code_is_stable(self):
+        login_client("boss").post(f"/api/admin/terminals/{self.term_a.pk}/revoke/")
+        r = login_client(self.shop_a.user.username).post("/api/merchant/simulate/", {
+            "payment_id": str(uuid4()), "amount": 5, "terminal_id": self.term_a.pk, "sensor_slot": 1}, format="json")
+        self.assertEqual(r.data["error"]["code"], "terminal_revoked")

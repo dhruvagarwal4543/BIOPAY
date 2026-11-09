@@ -14,9 +14,11 @@ export interface Terminal { id: number; name: string; merchant: string; status: 
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  code: string
+  constructor(status: number, message: string, code = '') {
     super(message)
     this.status = status
+    this.code = code
   }
 }
 
@@ -47,10 +49,12 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
     window.location.assign('/login')
   }
   if (!res.ok) {
-    const message =
-      data?.error?.message ??
+    const fields = data?.error?.fields
+    const message = fields
+      ? (Object.values(fields).flat() as string[]).join(' ')
+      : data?.error?.message ??
       (res.status === 403 ? 'You are not allowed to view this.' : `Request failed (${res.status}).`)
-    throw new ApiError(res.status, message)
+    throw new ApiError(res.status, message, data?.error?.code)
   }
   return data as T
 }

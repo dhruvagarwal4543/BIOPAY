@@ -116,7 +116,7 @@ export const Td = ({ children, num }: { children: ReactNode; num?: boolean }) =>
   <td className={`px-4 py-3 sm:px-3 ${num ? 'num text-right' : ''}`}>{children}</td>
 )
 
-export function PaymentsTable({ path, show }: { path: string; show: ('payer' | 'merchant')[] }) {
+export function PaymentsTable({ path, show, detail }: { path: string; show: ('payer' | 'merchant')[]; detail?: string }) {
   const [page, setPage] = useState(1)
   const { data, error, loading, reload } = useApi<Page<Payment>>(`${path}?page=${page}`)
   if (error) return <ErrorBox error={error} retry={reload} />
@@ -127,7 +127,7 @@ export function PaymentsTable({ path, show }: { path: string; show: ('payer' | '
       <Table head={['Time', ...show.map((s) => (s === 'payer' ? 'Customer' : 'Merchant')), 'Amount', 'Status', 'Verification']}>
         {data.results.map((p) => (
           <tr key={p.payment_id}>
-            <Td>{when(p.created_at)}</Td>
+            <Td>{detail ? <a className="text-accent underline" href={`${detail}/${p.payment_id}`}>{when(p.created_at)}</a> : when(p.created_at)}</Td>
             {show.map((s) => <Td key={s}>{p[s]}</Td>)}
             <Td num>{money(p.amount)}</Td>
             <Td><Badge>{p.status}</Badge></Td>

@@ -6,6 +6,7 @@ import Customer from './pages/Customer'
 import Landing from './landing/Landing'
 import Login from './pages/Login'
 import Merchant from './pages/Merchant'
+import { AdminAuditPage, PaymentDetail, Register, Simulator } from './pages/Extra'
 import { ErrorBox, Loading, SimBanner } from './ui'
 
 interface Auth { user: User | null; setUser: (u: User | null) => void }
@@ -52,6 +53,12 @@ function AppShell() {
         <Routes>
           <Route path="/login" element={user ? <Navigate to={home} replace /> : <Login />} />
           <Route path="/customer" element={<Protected role="customer"><Customer /></Protected>} />
+          <Route path="/register" element={user ? <Navigate to={home} replace /> : <Register />} />
+          <Route path="/demo" element={<Navigate to={user?.role === 'merchant' ? '/merchant/terminal' : home} replace />} />
+          <Route path="/customer/payments/:id" element={<Protected role="customer"><PaymentDetail base="customer" /></Protected>} />
+          <Route path="/merchant/payments/:id" element={<Protected role="merchant"><PaymentDetail base="merchant" /></Protected>} />
+          <Route path="/merchant/terminal" element={<Protected role="merchant"><Simulator /></Protected>} />
+          <Route path="/admin/audit" element={<Protected role="admin"><AdminAuditPage /></Protected>} />
           <Route path="/merchant" element={<Protected role="merchant"><Merchant /></Protected>} />
           <Route path="/admin" element={<Protected role="admin"><Admin /></Protected>} />
           <Route path="*" element={<Navigate to={home} replace />} />

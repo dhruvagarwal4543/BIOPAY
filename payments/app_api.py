@@ -167,7 +167,7 @@ class MerchantSimulate(APIView):
         try:
             payment, created = pay_at_terminal(terminal=terminal, **v)
         except TerminalRevoked:  # 401 would sign the browser out; this is a 403 for a human session
-            raise PermissionDenied("This terminal has been revoked.") from None
+            raise PermissionDenied("This terminal has been revoked.", code="terminal_revoked") from None
         data = {"payment": PaymentSerializer(payment).data, "replayed": not created,
                 "authentication": "MOCK — DEVELOPMENT SIMULATION — NOT A PHYSICAL FINGERPRINT MATCH"}
         if payment.status == payment.Status.DECLINED:

@@ -26,7 +26,7 @@ def exception_handler(exc, context):
         }
     else:
         error = {
-            "code": getattr(exc, "default_code", "request_error"),
+            "code": exc.get_codes() if isinstance(exc.get_codes(), str) else exc.default_code,
             "message": str(response.data.get("detail", "Request failed.")),
         }
     response.data = {"error": error}

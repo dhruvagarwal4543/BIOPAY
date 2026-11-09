@@ -1,5 +1,6 @@
 import { when, type Terminal } from '../api'
 import { Badge, Balance, Empty, ErrorBox, Loading, MockNotice, Panel, PaymentsTable, Table, Td, useApi } from '../ui'
+import { Link } from 'react-router-dom'
 import Layout from './Layout'
 
 export default function Merchant() {
@@ -9,7 +10,7 @@ export default function Merchant() {
       {error ? <ErrorBox error={error} retry={reload} /> : !data ? <Loading /> : (
         <>
           <Balance label="Merchant balance" value={data.balance} />
-          <Panel title="Terminals">
+          <Panel title="Terminals" action={<Link to="/merchant/terminal" className="text-sm text-accent underline">Open simulator</Link>}>
             <div className="space-y-4">
               <MockNotice />
               {data.terminals.length === 0 ? <Empty>No terminal assigned.</Empty> : (
@@ -23,7 +24,7 @@ export default function Merchant() {
           </Panel>
         </>
       )}
-      <Panel title="Payment records"><PaymentsTable path="/merchant/payments/" show={['payer']} /></Panel>
+      <Panel title="Payment records"><PaymentsTable path="/merchant/payments/" detail="/merchant/payments" show={['payer']} /></Panel>
     </Layout>
   )
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api, ApiError, when, type Enrollment } from '../api'
 import { Badge, Balance, Empty, ErrorBox, Loading, MockNotice, Panel, PaymentsTable, useApi } from '../ui'
+import { EnrollPanel } from './Extra'
 import Layout from './Layout'
 
 export default function Customer() {
@@ -25,7 +26,8 @@ export default function Customer() {
             <div className="space-y-4">
               <MockNotice />
               {actionError && <ErrorBox error={actionError} />}
-              {data.enrollments.length === 0 ? <Empty>No enrollment. Ask a supervisor to enroll you.</Empty> : (
+              <EnrollPanel onDone={reload} />
+              {data.enrollments.length === 0 ? <Empty>No enrollment yet.</Empty> : (
                 <ul className="divide-y divide-line">
                   {data.enrollments.map((e) => (
                     <li key={e.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -50,7 +52,7 @@ export default function Customer() {
           </Panel>
         </>
       )}
-      <Panel title="Transaction history"><PaymentsTable path="/customer/payments/" show={['merchant']} /></Panel>
+      <Panel title="Transaction history"><PaymentsTable path="/customer/payments/" detail="/customer/payments" show={['merchant']} /></Panel>
     </Layout>
   )
 }

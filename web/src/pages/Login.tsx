@@ -44,6 +44,7 @@ export default function Login() {
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        <p className="mt-4 text-center text-sm text-muted">New here? <a className="text-accent underline" href="/register">Create an account</a></p>
       </main>
     </>
   )
