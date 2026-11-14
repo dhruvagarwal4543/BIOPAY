@@ -1,5 +1,7 @@
 # BioPay project plan
 
+> Original plan from the start of the project. **Current status, architecture and test results are in `PROJECT_MASTER_PLAN.md`, `ARCHITECTURE.md` and `TEST_REPORT.md`.**
+
 **SIMULATED — NO REAL MONEY.** BioCoins have no cash value and are never exchanged for money or goods.
 
 A controlled university demonstration: a merchant enters an amount on a physical terminal, a customer authenticates with a fingerprint sensor, and the backend transfers simulated BioCoins exactly once. The customer needs no phone. Team of five, about one week. The college supplies hardware; its exact components are not yet known.

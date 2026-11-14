@@ -1,5 +1,7 @@
 # BioPay backend review and audit
 
+> Historical review of the first backend slice (27 October 2026). Current results are in `TEST_REPORT.md`.
+
 Verified on 27 October 2026. **SIMULATED — NO REAL MONEY**
 
 What this change does: creates a Django REST Framework backend for a transfer between two fixed demo accounts. It records final payments and balanced ledger entries, handles repeated UUIDs, and exposes token-gated development APIs for payment submission, status, balances, and history.

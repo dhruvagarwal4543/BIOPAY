@@ -32,3 +32,17 @@
 - Real stack (`npm run test:real` in web/, needs `scripts/demo.sh start`): **ALL PASSED**, now including overflow checks at 320/390/768/1024/1440/1920 on every role page.
 - Found + fixed: admin page overflowed horizontally at 320 px (grid items could not shrink below the table min-width; fixed with `min-w-0` on Panel). Landing: wallet scene was two flat slabs with a hidden coin (now rounded cards, dashed link, arcing coin); on phones the 3D sat behind the text card (text now bottom-aligned on portrait). drei `Html` labels caused a React console error and were not used.
 - Visual check: software-WebGL screenshots at 1920x1080, 390x844, 320x640. Not measured: real GPU frame rate.
+
+## Release verification (2026-11-15) — software phase close
+| Command | Result |
+| --- | --- |
+| `manage.py test --noinput` | 105 OK (adds: demo features all 404 on a non-DEBUG config even with the demo flag on) |
+| `manage.py makemigrations --check --dry-run` | No changes detected |
+| `cd web && npx playwright test` | 18 passed (mocked API) |
+| `cd web && npm run test:real` (scripts/demo.sh start first) | ALL PASSED: full demo, axe 0 violations on 9 pages (landing, register, customer, profile, merchant, simulator, merchant tx detail, admin, audit), no overflow 320-1920 px on the main pages of every role (not the tx-detail pages), no unexpected console errors |
+| `npx tsc -b` / `npx vite build` | clean / OK (app 289 kB, Landing 117 kB, Scene 945 kB lazy) |
+| `npx oxlint` | 0 errors, 1 warning left (ui.tsx fast-refresh hint: hook exported next to components; dev-only, not a defect). The set-state-in-effect warning was fixed by deriving `loading` in `useApi`. |
+| `make -C firmware test` | passed (native fakes only) |
+- Documents built: `docs/FINAL_REPORT.pdf` + `.docx` (from `docs/FINAL_REPORT.md`), `docs/BioPay_Presentation.pptx` (15 slides), 4 diagrams in `docs/diagrams` (+ PNG in `docs/assets`). Diagrams and report layout were viewed as rendered images. The PPTX was only checked programmatically (15 slides open with python-pptx, every shape inside the slide); no PowerPoint/LibreOffice was available to render the slides. DOCX was generated but not opened in Word.
+- Secrets scan: no `.env`, key or credential file ever committed. Finding: an older `scripts/demo.sh` (commit b516e37..6d56df6, already pushed) had a hardcoded default demo password for a throwaway local database; it is no longer used (passwords are now generated into git-ignored `.demo-credentials`). History was not rewritten.
+- Not measured: real GPU frame rate, screen-reader session, load testing.

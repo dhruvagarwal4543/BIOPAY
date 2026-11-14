@@ -2,11 +2,11 @@
 
 **SIMULATED — NO REAL MONEY**
 
-This first backend slice transfers integer BioCoins between one fixed demo customer and one fixed demo merchant. BioCoins have no cash value. Never exchange them for money or actual goods.
+BioPay is a college IoT demonstration of phone-free fingerprint checkout with **simulated BioCoins** (no cash value; never exchange them for money or goods). It has a Django REST + PostgreSQL backend (atomic transfers, payment-ID idempotency, ledger, audit log), a React + Three.js web app (landing page, customer, merchant and admin dashboards) and a hardware-independent firmware core.
 
-Fingerprint authentication is **simulated** (every payment and enrollment is marked `MOCK`) until the college hardware arrives. The mock APIs are disabled by default and also require Django debug mode. Keep the server on your private development machine. This is not the volunteer-ready or production backend.
+Fingerprint authentication is **simulated**: every enrollment and payment is marked `MOCK`, and no physical terminal or sensor has been built or tested yet (see `docs/HARDWARE_HANDOFF.md`). The mock enrollment, simulator and terminal API exist only when Django `DEBUG` and `BIOPAY_ENABLE_DEMO_API` are both on. Keep them off on any shared host; this is a classroom demonstration, not a production payment system.
 
-Architecture and status: see `PROJECT_PLAN.md`. A React web app lives in `web/` (section "Web application" below).
+Quick demo: `scripts/demo.sh start` (isolated database, see `docs/DEMO_SCRIPT.md`). Architecture: `ARCHITECTURE.md`. Status and tests: `PROJECT_MASTER_PLAN.md`, `TEST_REPORT.md`. Documents: see "Documents" at the end. The web app lives in `web/`.
 
 ## Prerequisites
 
@@ -296,3 +296,12 @@ For framework behavior used here, see the official [Django transaction guide](ht
 
 **Warning:** the simulator and mock enrollment let a merchant charge any enrolled slot on its own terminal. They exist for development only; keep `BIOPAY_ENABLE_DEMO_API` off on any shared host.
 Tests: `python manage.py test` (backend), `cd web && npx playwright test` (browser, mocked API), `make -C firmware test`.
+
+## Documents
+- `docs/FINAL_REPORT.pdf` / `docs/FINAL_REPORT.docx` (source `docs/FINAL_REPORT.md`): college project report with diagrams, results and viva Q&A.
+- `docs/BioPay_Presentation.pptx`: 15-slide presentation.
+- `docs/DEMO_SCRIPT.md`: live demo walkthrough and troubleshooting.
+- `docs/HARDWARE_HANDOFF.md`: what is needed before wiring, and the physical test checklist.
+- `docs/diagrams/*.svg`: architecture, payment sequence, database, hardware plan (PNG copies in `docs/assets/`).
+- Rebuild the PDF/DOCX/PPTX: `pip install python-docx python-pptx pillow`, then `python docs/build_docs.py && node docs/html_to_pdf.mjs && python docs/build_pptx.py`.
+- `ARCHITECTURE.md`, `TEST_REPORT.md`, `BLOCKERS.md`, `PROJECT_MASTER_PLAN.md`.

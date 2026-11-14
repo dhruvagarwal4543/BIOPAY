@@ -84,18 +84,21 @@ export function ErrorBox({ error, retry }: { error: ApiError; retry?: () => void
 }
 
 export function useApi<T>(path: string) {
-  const [state, setState] = useState<{ data?: T; error?: ApiError; loading: boolean }>({ loading: true })
   const [tick, setTick] = useState(0)
+  // The result is tagged with the request it answers, so "loading" is derived (no setState in the effect).
+  const key = `${path}#${tick}`
+  const [result, setResult] = useState<{ key: string; data?: T; error?: ApiError }>({ key: '' })
   useEffect(() => {
     let live = true
-    setState((s) => ({ data: s.data, loading: true }))
     api<T>(path).then(
-      (data) => live && setState({ data, loading: false }),
-      (error) => live && setState({ error, loading: false }),
+      (data) => live && setResult({ key, data }),
+      (error) => live && setResult({ key, error }),
     )
     return () => { live = false }
-  }, [path, tick])
-  return { ...state, reload: useCallback(() => setTick((t) => t + 1), []) }
+  }, [path, key])
+  const loading = result.key !== key
+  // Keep the last data while refreshing; drop an old error as soon as a new request starts.
+  return { data: result.data, error: loading ? undefined : result.error, loading, reload: useCallback(() => setTick((t) => t + 1), []) }
 }
 
 export function Table({ head, children }: { head: string[]; children: ReactNode }) {

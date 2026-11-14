@@ -19,6 +19,9 @@ Plan + progress in one file. Evidence: TEST_REPORT.md. Blockers: BLOCKERS.md. De
 ## Done since last checkpoint
 Simulator needs per-enrollment customer consent; /wallet, /profile, nav; axe + responsive tests; real-stack demo script; scripts/demo.sh; college docs.
 
+## SOFTWARE PHASE CLOSED (2026-11-15)
+All software tasks done and verified (see TEST_REPORT.md, release verification). Deliverables: docs/FINAL_REPORT.pdf/.docx, docs/BioPay_Presentation.pptx, docs/diagrams, docs/HARDWARE_HANDOFF.md.
+
 ## Resume point
 Next: (a) when hardware arrives: pick parts, follow firmware/INTEGRATION_PLAN.md; add a real-sensor mode to the terminal API (BLOCKERS #2) and HTTPS;
 (b) screen-reader pass and GPU frame-rate check; (c) production settings pass.
