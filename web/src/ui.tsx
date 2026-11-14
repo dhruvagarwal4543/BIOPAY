@@ -22,7 +22,7 @@ export function MockNotice() {
 
 export function Panel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <section className="rounded-lg border border-line bg-ink-900">
+    <section className="min-w-0 rounded-lg border border-line bg-ink-900">
       <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">{title}</h2>
         {action}

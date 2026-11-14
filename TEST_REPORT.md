@@ -25,3 +25,10 @@
 - Firmware `make -C firmware test` OK (native fakes).
 - Ponytail review of this session's code: fixed demo.sh killing unrelated servers (now pid files), hardcoded paths in the real-stack script, misleading simulator toggle when disabled, missing consent race test.
 - NOT done: screen-reader session; axe on authenticated pages is only in the real-stack script (not in CI); real-GPU frame rate; mobile pages other than /merchant and /merchant/terminal checked for overflow only on the public pages + merchant pair; admin/customer pages at 390px not overflow-tested.
+
+## Verification run (2026-11-14)
+- `manage.py test --noinput`: **104 OK** (first attempt failed only because a leftover `test_postgres` test DB from an interrupted run asked for confirmation; removed with --noinput).
+- Playwright (mocked API): **18 passed**. Firmware `make -C firmware test`: OK. `tsc -b` OK. `oxlint`: 0 errors, 1 warning (ui.tsx set-state-in-effect, pre-existing). `vite build` OK (app 289 kB, Landing 117 kB, Scene 945 kB lazy).
+- Real stack (`npm run test:real` in web/, needs `scripts/demo.sh start`): **ALL PASSED**, now including overflow checks at 320/390/768/1024/1440/1920 on every role page.
+- Found + fixed: admin page overflowed horizontally at 320 px (grid items could not shrink below the table min-width; fixed with `min-w-0` on Panel). Landing: wallet scene was two flat slabs with a hidden coin (now rounded cards, dashed link, arcing coin); on phones the 3D sat behind the text card (text now bottom-aligned on portrait). drei `Html` labels caused a React console error and were not used.
+- Visual check: software-WebGL screenshots at 1920x1080, 390x844, 320x640. Not measured: real GPU frame rate.
