@@ -20,6 +20,8 @@ export interface Mock {
   deletionStatus: number
   paymentsStatus: number
   paymentRows: typeof payments
+  liveStatus: number
+  live: { id: number; name: string; merchant: string; online: boolean; screen: string | null; data: Record<string, unknown> }[]
   calls: Record<string, number>
 }
 
@@ -30,7 +32,8 @@ const json = (route: Route, status: number, body: unknown) =>
 export async function mockApi(page: Page, initial: Partial<Mock> = {}) {
   const state: Mock = {
     user: null, expireOnNextData: false, deletionStatus: 200, paymentsStatus: 200,
-    paymentRows: payments, calls: {}, ...initial,
+    paymentRows: payments, calls: {}, liveStatus: 200,
+    live: [{ id: 1, name: 'Counter 1', merchant: 'Shop A', online: false, screen: null, data: {} }], ...initial,
   }
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname.replace('/api', '')
@@ -67,6 +70,9 @@ export async function mockApi(page: Page, initial: Partial<Mock> = {}) {
     }
     if (path === '/merchant/overview/') {
       return json(route, 200, { balance: 40, terminals: [{ id: 1, name: 'Counter 1', merchant: 'Shop A', status: 'ACTIVE', last_seen: '2026-10-30T04:10:00Z' }] })
+    }
+    if (path === '/merchant/terminals/live/') {
+      return state.liveStatus === 200 ? json(route, 200, { terminals: state.live }) : json(route, state.liveStatus, { error: { code: 'server_error', message: 'x' } })
     }
     if (path === '/customer/payments/' || path === '/merchant/payments/') {
       if (state.paymentsStatus !== 200) return json(route, state.paymentsStatus, { error: { code: 'server_error', message: 'Server error.' } })

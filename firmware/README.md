@@ -8,6 +8,7 @@ Hardware: R307S fingerprint (UART), 4x4 keypad (GPIO 32,33,25,26 / 27,14,18,19),
 | `make test`: payment state machine + amount entry | software, native, fakes |
 | `pio run -e nodemcu-32s` compiles | software build only |
 | Backend real-sensor mode (`python manage.py test payments`) | software, real PostgreSQL |
+| Website widget vs mocked API (`npm run test:e2e`), live endpoints (`manage.py test`) | software, mocked device |
 | R307S match, keypad, LED, Wi-Fi, full payment on the board | **NOT YET RUN on hardware** |
 
 ## Configure and build
@@ -24,5 +25,8 @@ Run Django with `BIOPAY_TERMINAL_REAL_SENSOR=true` (works with `DJANGO_DEBUG=fal
 - LED: blip every 2s idle | fast blink waiting/working | solid 2s paid | 3 slow blinks failure | 1Hz blink unconfirmed (same payment is resent, never doubled).
 - Unconfirmed payments are stored in NVS and resent with the same UUID, also after a reboot.
 
+## Live virtual display (website, replaces the removed OLED)
+Merchants and admins see a floating terminal screen (bottom-right; collapse, drag). The device posts UI states (`idle, amount, confirm, finger, matched, no_match, processing, unconfirmed, error`) to `POST /api/terminal/status/` with the terminal key, every change plus a 5s heartbeat. The **server** writes `success`/`declined` (with amount and short reference) from the real payment service, so a client cannot announce a result. The site polls `GET /api/merchant/terminals/live/` every 1s (4s collapsed); a terminal with no report for 15s shows **Offline** and no screen. Non-real-sensor mode is labelled MOCK. Only UI state is sent: no templates, images, keys or payer names.
+
 ## Hardware verification checklist (all UNCHECKED)
-Sensor found at boot; enrol with consent; match pays and web history shows an `R307S` payment; wrong finger sends nothing; insufficient funds shows failure LED; Wi-Fi off mid-payment gives exactly one debit after reconnect; revoked terminal is refused; keypad key order matches the labels.
+Sensor found at boot; enrol with consent; match pays and web history shows an `R307S` payment; wrong finger sends nothing; insufficient funds shows failure LED; Wi-Fi off mid-payment gives exactly one debit after reconnect; revoked terminal is refused; keypad key order matches the labels; website widget goes Live within ~5s of boot, mirrors typed digits and finger prompts, shows PAID/DECLINED with the same reference as history, and turns Offline ~15s after unplugging.

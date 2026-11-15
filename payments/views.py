@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from .api_errors import DemoNotReady
 from .authentication import MockDemoAuthentication, TerminalKeyAuthentication
 from .constants import DEMO_CUSTOMER_CODE, DEMO_MERCHANT_CODE, SIMULATION_WARNING
+from .live import set_status
 from .models import Payment, Wallet
 from .serializers import (
     PaymentRequestSerializer, PaymentSerializer, TerminalPaymentRequestSerializer,
@@ -110,6 +111,10 @@ class TerminalPaymentView(TerminalAPIView):
         payment, created = pay_at_terminal(
             terminal=request.user.terminal, source=terminal_source(), **serializer.validated_data)
         data = {"payment": PaymentSerializer(payment).data, "replayed": not created}
+        # The result shown on the website's terminal screen comes from the payment service, never the device.
+        ok = payment.status == Payment.Status.SUCCESS
+        set_status(request.user.terminal, "success" if ok else "declined",
+                   amount=payment.amount, ref=str(payment.id)[:8])
         if payment.status == Payment.Status.DECLINED:
             data["error"] = {
                 "code": "insufficient_funds", "message": "Not enough simulated BioCoins."

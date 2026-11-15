@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { useAuth } from '../App'
 import { api } from '../api'
 import { SimBanner } from '../ui'
+import TerminalDisplay from '../TerminalDisplay'
 
 const NAV: Record<string, [string, string][]> = {
   customer: [['/customer', 'Wallet'], ['/profile', 'Profile']],
@@ -42,6 +43,7 @@ export default function Layout({ title, children }: { title: string; children: R
         <h1 className="text-2xl font-semibold tracking-tight sm:hidden">{title}</h1>
         {children}
       </main>
+      {(user?.role === 'merchant' || user?.role === 'admin') && <TerminalDisplay />}
     </>
   )
 }

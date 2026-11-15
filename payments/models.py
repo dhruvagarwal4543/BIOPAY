@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
 class Customer(models.Model):
@@ -73,6 +74,17 @@ class Terminal(models.Model):
                 and Terminal.objects.filter(pk=self.pk, revoked_at__isnull=False).exists()):
             raise ValueError("A revoked terminal cannot be reactivated. Use replace_terminal.")
         super().save(*args, **kwargs)
+
+
+class TerminalStatus(models.Model):
+    """The terminal's current screen, mirrored to the website. Holds UI state only: never a
+    fingerprint, template, key or payer identity."""
+
+    terminal = models.OneToOneField(Terminal, on_delete=models.CASCADE, related_name="status")
+    screen = models.CharField(max_length=16)
+    data = models.JSONField(default=dict)
+    seq = models.BigIntegerField(default=0)
+    updated_at = models.DateTimeField(default=timezone.now)
 
 
 class Enrollment(models.Model):

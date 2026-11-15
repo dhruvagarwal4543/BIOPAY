@@ -7,9 +7,10 @@ import { MOCK_FP, mockApi, SIM } from './helpers'
 // Dev mode runs React StrictMode, which doubles the first fetches, so assert "stops growing", not exact counts.
 async function expectNoMoreCalls(page: Page, state: { calls: Record<string, number> }) {
   await page.waitForTimeout(300)
-  const snapshot = JSON.stringify(state.calls)
+  const snap = () => JSON.stringify({ ...state.calls, '/merchant/terminals/live/': 0 }) // the live display polls by design
+  const snapshot = snap()
   await page.waitForTimeout(700)
-  expect(JSON.stringify(state.calls)).toBe(snapshot)
+  expect(snap()).toBe(snapshot)
 }
 
 async function signIn(page: Page, username: string, password = 'correct-password') {

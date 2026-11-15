@@ -53,6 +53,44 @@ static void ledTick() {
 // Block (while animating) for ms; keeps the LED honest during waits.
 static void hold(uint32_t ms) { uint32_t s = millis(); while (millis() - s < ms) { ledTick(); delay(5); } }
 
+// ---- Live display: UI state only (screen name, typed digits, amount, error code). Never a fingerprint,
+// template or key. A background task posts changes plus a 5s heartbeat so the website can tell Live from Offline.
+// The payment RESULT is written by the server; this device only reports what it is doing.
+static struct { char screen[16]; long amount; char entry[8]; char code[16]; uint32_t seq; } pub = {"idle", -1, "", "", 1};
+static SemaphoreHandle_t pubMu;
+static void publish(const char* screen, long amount = -1, const char* entry = "", const char* code = "") {
+  xSemaphoreTake(pubMu, portMAX_DELAY);
+  snprintf(pub.screen, sizeof pub.screen, "%s", screen); pub.amount = amount;
+  snprintf(pub.entry, sizeof pub.entry, "%s", entry); snprintf(pub.code, sizeof pub.code, "%s", code); pub.seq++;
+  xSemaphoreGive(pubMu);
+}
+static void publishTask(void*) {
+  uint32_t sent = 0, beat = 0;
+  for (;;) {
+    xSemaphoreTake(pubMu, portMAX_DELAY); auto c = pub; xSemaphoreGive(pubMu);
+    if ((c.seq != sent || millis() - beat >= 5000) && WiFi.status() == WL_CONNECTED) {
+      char j[160]; int n = snprintf(j, sizeof j, "{\"screen\":\"%s\"", c.screen);
+      if (c.amount >= 0) n += snprintf(j + n, sizeof j - n, ",\"amount\":%ld", c.amount);
+      if (c.entry[0]) n += snprintf(j + n, sizeof j - n, ",\"entry\":\"%s\"", c.entry);
+      if (c.code[0]) n += snprintf(j + n, sizeof j - n, ",\"code\":\"%s\"", c.code);
+      snprintf(j + n, sizeof j - n, "}");
+      HTTPClient h; h.setTimeout(3000);
+      #if BIOPAY_USE_TLS
+      WiFiClientSecure cl; cl.setCACert(BIOPAY_CA_CERT);
+      #else
+      WiFiClient cl;
+      #endif
+      if (h.begin(cl, String(BIOPAY_HOST) + "/api/terminal/status/")) {
+        h.addHeader("Content-Type", "application/json"); h.addHeader("X-BioPay-Terminal-Key", BIOPAY_TERMINAL_KEY);
+        if (h.POST(String(j)) == 200) { sent = c.seq; beat = millis(); }  // failed: try again next loop
+        h.end();
+      }
+    }
+    vTaskDelay(pdMS_TO_TICKS(c.seq != sent ? 150 : 500));
+  }
+}
+static long curAmount = -1;
+
 // ---- Interfaces behind PayFlow ----
 struct EspHttp : Http {
   int post(const std::string& json, std::string& body) override {
@@ -92,18 +130,19 @@ struct EspRng : Rng {
 struct R307Sensor : Sensor {  // 1:N search on the module; only the matched slot number is returned
   bool match(uint32_t& slot) override {
     Serial.println("Place finger on the sensor...");
-    setLed(Led::Wait);
+    setLed(Led::Wait); publish("finger", curAmount);
     uint32_t start = millis(); uint8_t p = FINGERPRINT_NOFINGER;
     while (millis() - start < 15000) {
       ledTick(); p = finger.getImage();
       if (p == FINGERPRINT_OK) break;
       delay(30);
     }
-    if (p != FINGERPRINT_OK) { Serial.println("No finger detected (timeout)."); return false; }
-    if (finger.image2Tz() != FINGERPRINT_OK) { Serial.println("Could not read the finger; try again."); return false; }
-    if (finger.fingerSearch() != FINGERPRINT_OK) { Serial.println("Fingerprint not recognised."); return false; }
+    if (p != FINGERPRINT_OK) { Serial.println("No finger detected (timeout)."); publish("error", -1, "", "timeout"); return false; }
+    if (finger.image2Tz() != FINGERPRINT_OK) { Serial.println("Could not read the finger; try again."); publish("error", -1, "", "timeout"); return false; }
+    if (finger.fingerSearch() != FINGERPRINT_OK) { Serial.println("Fingerprint not recognised."); publish("no_match"); return false; }
     slot = finger.fingerID;
     Serial.printf("Matched sensor slot %u (confidence %u)\n", (unsigned)slot, (unsigned)finger.confidence);
+    publish("matched"); hold(600); publish("processing", curAmount);
     return true;
   }
 };
@@ -119,7 +158,15 @@ static bool wifiUp(uint32_t waitMs) {
   return WiFi.status() == WL_CONNECTED;
 }
 
-static void show(Result r) {
+static void show(Result r) {  // Success/Declined are published by the server, not here
+  switch (r) {
+    case Result::NetworkRetry: publish("unconfirmed", curAmount); break;
+    case Result::NoEnrollment: publish("error", -1, "", "no_enrollment"); break;
+    case Result::Conflict: publish("error", -1, "", "conflict"); break;
+    case Result::ServerError: publish("error", -1, "", "server_error"); break;
+    case Result::BadAmount: publish("error", -1, "", "bad_amount"); break;
+    default: break;
+  }
   switch (r) {
     case Result::Success: Serial.println("PAYMENT OK"); setLed(Led::Ok); break;
     case Result::InsufficientFunds: Serial.println("DECLINED: insufficient BioCoins"); setLed(Led::Fail); break;
@@ -178,14 +225,18 @@ static void enrollFinger() {
 static void payOnce() {
   AmountEntry a(BIOPAY_MAX_AMOUNT);
   Serial.printf("Amount in BioCoins (max %d): digits, '*' delete, '#' confirm\n", BIOPAY_MAX_AMOUNT);
+  publish("amount");
   while (a.state() != AmountEntry::State::Done && a.state() != AmountEntry::State::Cancelled) {
     auto before = a.state(); a.feed(waitKey());
-    if (a.state() == AmountEntry::State::Confirming && before != a.state())
+    char e[8] = ""; if (a.value() > 0) snprintf(e, sizeof e, "%lld", (long long)a.value());
+    if (a.state() == AmountEntry::State::Confirming && before != a.state()) {
       Serial.printf("Pay %lld BioCoins? '#' = yes, '*' = correct\n", (long long)a.value());
-    else Serial.printf("Amount: %lld\n", (long long)a.value());
+      publish("confirm", (long)a.value());
+    } else { Serial.printf("Amount: %lld\n", (long long)a.value()); publish("amount", -1, e); }
   }
-  if (a.state() == AmountEntry::State::Cancelled) { Serial.println("Cancelled"); return; }
-  if (!wifiUp(10000)) Serial.println("Wi-Fi down: payment will be queued and retried (same id).");
+  if (a.state() == AmountEntry::State::Cancelled) { Serial.println("Cancelled"); publish("idle"); return; }
+  curAmount = (long)a.value();
+  if (!wifiUp(10000)) { Serial.println("Wi-Fi down: payment will be queued and retried (same id)."); publish("error", -1, "", "wifi"); }
   Result r = flow.start(a.value());
   r = settlePending(r);
   show(r);
@@ -203,6 +254,8 @@ void setup() {
   }
   finger.getParameters();
   prefs.begin("biopay", false);
+  pubMu = xSemaphoreCreateMutex();
+  xTaskCreate(publishTask, "publish", 10240, nullptr, 1, nullptr);
   Serial.printf("R307S ok, capacity %u. Wi-Fi...\n", (unsigned)finger.capacity);
   Serial.println(wifiUp(15000) ? "Wi-Fi connected" : "Wi-Fi not connected yet; will retry on payment");
   if (flow.hasPending()) {  // reboot mid-payment: settle it before anything new
@@ -218,6 +271,6 @@ void loop() {
   char k = keypad.getKey();
   if (!k) return;
   if (k == 'A') enrollFinger(); else payOnce();
-  hold(300); setLed(Led::Idle);
+  hold(300); setLed(Led::Idle); publish("idle");
   Serial.println("Ready.");
 }

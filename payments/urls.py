@@ -2,6 +2,7 @@ from django.urls import path
 
 from . import app_api as a
 from . import dashboard as d
+from . import live
 from .views import (
     HistoryView, PaymentStatusView, PaymentView, TerminalPaymentStatusView,
     TerminalPaymentView, WalletView,
@@ -19,6 +20,7 @@ urlpatterns = [
 terminal_urlpatterns = [
     path("payments/", TerminalPaymentView.as_view(), name="terminal-payment"),
     path("payments/<str:payment_id>/", TerminalPaymentStatusView.as_view(), name="terminal-payment-status"),
+    path("status/", live.TerminalStatusPublish.as_view(), name="terminal-status"),
 ]
 
 # Mounted at api/: human session login and dashboards.
@@ -33,6 +35,7 @@ web_urlpatterns = [
     path("customer/enrollments/<int:pk>/simulator/", a.SimulatorConsent.as_view()),
     path("customer/payments/<str:pk>/", a.CustomerPaymentDetail.as_view()),
     path("merchant/payments/<str:pk>/", a.MerchantPaymentDetail.as_view()),
+    path("merchant/terminals/live/", live.LiveTerminals.as_view()),
     path("merchant/simulate/", a.MerchantSimulate.as_view()),
     path("admin/audit/", a.AdminAudit.as_view()),
     path("customer/overview/", d.CustomerOverview.as_view()),
