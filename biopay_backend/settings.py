@@ -60,6 +60,8 @@ DATABASES = {
 }
 
 BIOPAY_ENABLE_DEMO_API = os.environ.get("BIOPAY_ENABLE_DEMO_API", "false").lower() == "true"
+# Real R307S terminals. Works with DEBUG off; mock enrollment/simulator stay DEBUG-only.
+BIOPAY_TERMINAL_REAL_SENSOR = os.environ.get("BIOPAY_TERMINAL_REAL_SENSOR", "false").lower() == "true"
 BIOPAY_DEMO_TOKEN = os.environ.get("BIOPAY_DEMO_TOKEN", "")
 BIOPAY_SIGNUP_GRANT = int(os.environ.get("BIOPAY_SIGNUP_GRANT", "100"))
 BIOPAY_MAX_PAYMENT = int(os.environ.get("BIOPAY_MAX_PAYMENT", "100"))

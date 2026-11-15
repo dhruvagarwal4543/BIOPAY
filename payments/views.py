@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Q
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound
@@ -85,6 +86,10 @@ class HistoryView(DemoAPIView):
         return paginator.get_paginated_response(PaymentSerializer(page, many=True).data)
 
 
+def terminal_source():
+    return "R307S" if settings.BIOPAY_TERMINAL_REAL_SENSOR else "MOCK"
+
+
 class TerminalAPIView(DemoAPIView):
     authentication_classes = [TerminalKeyAuthentication]
 
@@ -92,7 +97,8 @@ class TerminalAPIView(DemoAPIView):
         response = super().finalize_response(request, response, *args, **kwargs)
         if isinstance(getattr(response, "data", None), dict):
             response.data["authentication"] = (
-                "MOCK — DEVELOPMENT SIMULATION — NOT A PHYSICAL FINGERPRINT MATCH"
+                "R307S on-sensor fingerprint match" if settings.BIOPAY_TERMINAL_REAL_SENSOR
+                else "MOCK — DEVELOPMENT SIMULATION — NOT A PHYSICAL FINGERPRINT MATCH"
             )
         return response
 
@@ -101,7 +107,8 @@ class TerminalPaymentView(TerminalAPIView):
     def post(self, request):
         serializer = TerminalPaymentRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        payment, created = pay_at_terminal(terminal=request.user.terminal, **serializer.validated_data)
+        payment, created = pay_at_terminal(
+            terminal=request.user.terminal, source=terminal_source(), **serializer.validated_data)
         data = {"payment": PaymentSerializer(payment).data, "replayed": not created}
         if payment.status == Payment.Status.DECLINED:
             data["error"] = {

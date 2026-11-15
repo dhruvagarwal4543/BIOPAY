@@ -78,18 +78,20 @@ class CustomerTerminals(APIView):
 
     def get(self, request):
         ts = Terminal.objects.filter(revoked_at__isnull=True).select_related("merchant")
-        return Response({"mock_enrollment": _mock_enabled(),
+        return Response({"mock_enrollment": _mock_enabled(), "real_sensor": settings.BIOPAY_TERMINAL_REAL_SENSOR,
                          "terminals": [{"id": t.pk, "name": t.name, "merchant": t.merchant.name} for t in ts]})
 
 
 class CustomerEnroll(APIView):
-    """MOCK enrollment for development. A real sensor enrolls on the device, never here."""
+    """Records the customer's consent and reserves a sensor slot. The finger itself is enrolled
+    on the R307S in that slot (real mode) and never reaches this server. MOCK in dev mode."""
 
     permission_classes = [IsCustomer]
 
     def post(self, request):
-        if not _mock_enabled():
-            raise NotFound("Mock enrollment is disabled.")
+        real = settings.BIOPAY_TERMINAL_REAL_SENSOR
+        if not (real or _mock_enabled()):
+            raise NotFound("Enrollment is disabled.")
         d = request.data if isinstance(request.data, dict) else {}
         if d.get("consent") is not True:
             raise serializers.ValidationError({"consent": ["Consent is required."]})
@@ -108,9 +110,10 @@ class CustomerEnroll(APIView):
             top = Enrollment.objects.filter(terminal=terminal).aggregate(m=Max("sensor_slot"))["m"]
             e = Enrollment.objects.create(customer=customer, terminal=terminal,
                                           sensor_slot=(top or 0) + 1, consented_at=timezone.now(),
-                                          simulator_allowed=d.get("allow_simulator") is True)
+                                          source="R307S" if real else "MOCK",
+                                          simulator_allowed=not real and d.get("allow_simulator") is True)
             AuditEvent.log(request.user.get_username(), "enrollment.created",
-                           f"enrollment {e.pk} (MOCK, simulator {'on' if e.simulator_allowed else 'off'})")
+                           f"enrollment {e.pk} ({e.source}, simulator {'on' if e.simulator_allowed else 'off'})")
         return Response({"enrollment": enrollment_row(e)}, status=status.HTTP_201_CREATED)
 
 
