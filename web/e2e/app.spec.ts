@@ -111,8 +111,8 @@ test('landing renders without the API, shows all six scenes and the simulation l
   // No mockApi: the public page must not depend on the backend being reachable.
   await page.goto('/')
   await expect(page).toHaveURL(/\/$/)
-  await expect(page.getByRole('heading', { level: 1, name: 'Your Identity. Your Payment.' })).toBeVisible()
-  await expect(page.getByText(SIM)).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Pay with the ridges of your finger.' })).toBeVisible()
+  await expect(page.getByText(SIM, { exact: true })).toBeVisible()
   await expect(page.locator('main section')).toHaveCount(6)
   await page.getByRole('link', { name: 'Launch Demo' }).first().click()
   await expect(page).toHaveURL(/\/login$/)
@@ -121,7 +121,7 @@ test('landing renders without the API, shows all six scenes and the simulation l
 test('landing with reduced motion still shows every scene copy (no scroll hijack, no horizontal scroll)', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'The Digital Wallet' })).toBeAttached()
+  await expect(page.getByRole('heading', { name: 'A lost reply never charges twice.' })).toBeAttached()
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
   expect(overflow).toBe(false)
 })

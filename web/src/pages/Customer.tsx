@@ -41,7 +41,7 @@ export default function Customer() {
                       {e.status === 'ACTIVE' && (
                         <span className="flex flex-wrap items-center gap-2">
                         {data.simulator_enabled && <SimulatorToggle e={e} onDone={reload} />}
-                        <button onClick={() => requestDeletion(e)} className="rounded border border-bad/50 px-3 py-1.5 text-sm text-bad hover:bg-bad/10">
+                        <button onClick={() => requestDeletion(e)} className="border-[1.5px] border-bad px-3 py-1.5 text-sm font-medium text-bad hover:bg-[#fbe6e1]">
                           Request deletion
                         </button>
                         </span>

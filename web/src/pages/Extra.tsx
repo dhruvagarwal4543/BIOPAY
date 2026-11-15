@@ -5,7 +5,7 @@ import { api, ApiError, money, when, type Page, type Payment, type User } from '
 import { Badge, Empty, ErrorBox, Loading, MockNotice, Panel, SimBanner, Table, Td, useApi } from '../ui'
 import Layout from './Layout'
 
-const input = 'mt-1 w-full rounded border border-line bg-ink-950 px-3 py-2'
+const input = 'mt-1 w-full border-[1.5px] border-fg bg-ink-900 px-3 py-2'
 
 export function Register() {
   const { setUser } = useAuth()
@@ -29,15 +29,15 @@ export function Register() {
     <>
       <SimBanner />
       <main className="mx-auto mt-12 w-full max-w-sm px-4">
-        <h1 className="text-3xl font-semibold tracking-tight">Create your account</h1>
-        <form onSubmit={submit} className="mt-6 space-y-4 rounded-lg border border-line bg-ink-900 p-5">
+        <h1 className="text-5xl font-black italic tracking-tight">Create your <span className="marker not-italic">account</span></h1>
+        <form onSubmit={submit} className="slab mt-6 space-y-4 bg-ink-900 p-6">
           <label className="block text-sm"><span className="text-muted">Full name</span><input name="name" required maxLength={100} className={input} /></label>
           <label className="block text-sm"><span className="text-muted">Username (lowercase, digits, hyphen)</span><input name="username" autoComplete="username" required pattern="[a-z0-9][a-z0-9\-]{2,29}" className={input} /></label>
           <label className="block text-sm"><span className="text-muted">Password (12+ characters)</span><input name="password" type="password" autoComplete="new-password" minLength={12} required className={input} /></label>
           <label className="flex gap-2 text-sm"><input name="consent" type="checkbox" required className="mt-1" />
             <span>I consent to the simulated fingerprint demo. BioCoins have no monetary value and no real biometric data is collected.</span></label>
           {error && <p role="alert" className="text-sm text-bad">{error}</p>}
-          <button className="w-full rounded bg-accent px-4 py-2 font-semibold text-ink-950">Register</button>
+          <button className="w-full slab press bg-accent px-4 py-2 font-semibold text-ink-900">Register</button>
           <p className="text-center text-sm text-muted">Have an account? <a className="text-accent underline" href="/login">Sign in</a></p>
         </form>
       </main>
@@ -60,7 +60,7 @@ export function EnrollPanel({ onDone }: { onDone: () => void }) {
     } catch (err) { setError(err as ApiError) }
   }
   return (
-    <form onSubmit={submit} className="space-y-3 rounded border border-line p-3">
+    <form onSubmit={submit} className="space-y-3 border-[1.5px] border-dashed border-fg bg-ink-950 p-4">
       <p className="text-sm font-medium">{real ? 'Reserve a fingerprint slot' : 'Add a simulated enrollment'}</p>
       {error && <ErrorBox error={error} />}
       <select name="terminal" required aria-label="Terminal" className={input}>
@@ -68,7 +68,7 @@ export function EnrollPanel({ onDone }: { onDone: () => void }) {
       </select>
       <label className="flex gap-2 text-sm"><input name="consent" type="checkbox" required className="mt-1" /><span>{real ? 'I consent to enrolling my fingerprint on this terminal’s sensor. The template stays on the sensor, never on the server. I can withdraw at any time.' : 'I consent to enrolling a simulated fingerprint on this terminal. I can withdraw at any time.'}</span></label>
       {!real && <label className="flex gap-2 text-sm"><input name="sim" type="checkbox" className="mt-1" /><span>Also allow the merchant simulator to charge this enrollment (demo only, you can switch it off any time).</span></label>}
-      <button className="rounded bg-accent px-3 py-1.5 text-sm font-semibold text-ink-950">{real ? 'Reserve slot' : 'Enroll (MOCK)'}</button>
+      <button className="slab press bg-accent px-3 py-1.5 text-sm font-semibold text-ink-900">{real ? 'Reserve slot' : 'Enroll (MOCK)'}</button>
     </form>
   )
 }
@@ -84,7 +84,7 @@ export function SimulatorToggle({ e, onDone }: { e: { id: number; simulator_allo
   }
   return (
     <span className="inline-flex flex-col items-end gap-1">
-      <button type="button" aria-pressed={e.simulator_allowed} onClick={flip} className="rounded border border-line px-3 py-1.5 text-sm hover:bg-ink-800">
+      <button type="button" aria-pressed={e.simulator_allowed} onClick={flip} className="border-[1.5px] border-fg px-3 py-1.5 text-sm font-medium hover:bg-hi">
         Merchant simulator: {e.simulator_allowed ? 'ON' : 'OFF'}
       </button>
       {error && <span role="alert" className="text-xs text-bad">{error.message}</span>}
@@ -174,12 +174,12 @@ export function Simulator() {
               <select name="terminal" className={input}>{data.terminals.filter((t) => t.status === 'ACTIVE').map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
             <label className="text-sm"><span className="text-muted">Mock fingerprint slot</span><input name="slot" type="number" min={0} step={1} required defaultValue={1} className={input} /></label>
             <label className="text-sm"><span className="text-muted">Amount (BioCoins)</span><input name="amount" type="number" min={1} step={1} required defaultValue={10} className={input} /></label>
-            <button disabled={outcome.kind === 'pending'} className="rounded bg-accent px-4 py-2 font-semibold text-ink-950 disabled:opacity-60">
+            <button disabled={outcome.kind === 'pending'} className="slab press bg-accent px-4 py-2 font-semibold text-ink-900 disabled:opacity-60">
               {outcome.kind === 'network' ? 'Retry payment' : 'Pay'}
             </button>
           </form>
           {attempt && outcome.kind !== 'pending' && outcome.kind !== 'network' && (
-            <button type="button" onClick={resend} className="mt-3 rounded border border-line px-3 py-1.5 text-sm hover:bg-ink-800">Resend the same payment (same payment ID)</button>
+            <button type="button" onClick={resend} className="mt-3 border-[1.5px] border-fg px-3 py-1.5 text-sm font-medium hover:bg-hi">Resend the same payment (same payment ID)</button>
           )}
           <p role="status" className={`mt-4 text-sm ${tone}`}>
             {outcome.kind === 'idle' ? 'Waiting.' : outcome.kind === 'pending' ? 'Waiting for server confirmation…' : `${outcome.kind.toUpperCase()}: ${outcome.msg}`}
@@ -204,8 +204,8 @@ export function AuditPanel() {
           <div className="mt-3 flex items-center justify-between text-xs text-muted">
             <span>{data.count} events</span>
             <span className="flex gap-2">
-              <button disabled={!data.previous} onClick={() => setPage(page - 1)} className="rounded border border-line px-3 py-1 disabled:opacity-40">Previous</button>
-              <button disabled={!data.next} onClick={() => setPage(page + 1)} className="rounded border border-line px-3 py-1 disabled:opacity-40">Next</button>
+              <button disabled={!data.previous} onClick={() => setPage(page - 1)} className="border-[1.5px] border-fg px-3 py-1 font-medium text-fg hover:bg-hi disabled:opacity-30">Previous</button>
+              <button disabled={!data.next} onClick={() => setPage(page + 1)} className="border-[1.5px] border-fg px-3 py-1 font-medium text-fg hover:bg-hi disabled:opacity-30">Next</button>
             </span>
           </div>
         </>
