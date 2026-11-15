@@ -6,15 +6,22 @@ export const MOCK_FP = 'DEVELOPMENT SIMULATION — NOT A PHYSICAL FINGERPRINT MA
 
 export function SimBanner() {
   return (
-    <div role="note" className="border-b border-line bg-ink-900 px-4 py-2 text-center text-xs font-semibold tracking-widest text-warn">
-      {SIM}
+    <div role="note" className="overflow-hidden border-b-[1.5px] border-fg bg-fg py-1.5 text-hi">
+      <span className="sr-only">{SIM}</span>
+      <div aria-hidden className="ticker flex w-max whitespace-nowrap">
+        {Array.from({ length: 2 }, (_, k) => (
+          <span key={k} className="label flex">
+            {Array.from({ length: 6 }, (_, i) => <span key={i} className="px-6">{SIM} ✱</span>)}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
 
 export function MockNotice() {
   return (
-    <p role="note" className="rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-xs font-semibold tracking-wide text-warn">
+    <p role="note" className="label border-[1.5px] border-dashed border-warn bg-[#fff4d6] px-3 py-2 text-warn">
       {MOCK_FP}
     </p>
   )
@@ -22,9 +29,9 @@ export function MockNotice() {
 
 export function Panel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <section className="min-w-0 rounded-lg border border-line bg-ink-900">
-      <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">{title}</h2>
+    <section className="slab min-w-0 bg-ink-900">
+      <header className="flex items-center justify-between gap-3 border-b-[1.5px] border-fg px-4 py-3 sm:px-5">
+        <h2 className="text-xl font-semibold italic">{title}</h2>
         {action}
       </header>
       <div className="p-4 sm:p-5">{children}</div>
@@ -34,33 +41,36 @@ export function Panel({ title, action, children }: { title: string; action?: Rea
 
 export function Balance({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-line bg-ink-900 p-5 sm:p-6">
-      <p className="text-sm text-muted">{label}</p>
-      <p className="num mt-2 text-5xl font-semibold tracking-tight">
-        {money(value)} <span className="text-lg font-medium text-accent">BioCoins</span>
+    <div className="slab relative overflow-hidden bg-hi p-5 sm:p-7">
+      <p className="label">{label}</p>
+      <p className="num mt-3 font-serif text-6xl font-black leading-none tracking-tight sm:text-8xl">
+        {money(value)} <span className="font-sans text-lg font-semibold italic text-accent sm:text-2xl">BioCoins</span>
       </p>
-      <p className="mt-2 text-xs text-muted">{SIM}. BioCoins have no cash value.</p>
+      <p className="mt-4 text-xs text-fg/70">{SIM}. BioCoins have no cash value.</p>
+      <svg aria-hidden viewBox="0 0 100 100" className="pointer-events-none absolute -right-6 -top-6 h-40 w-40 opacity-25 sm:h-56 sm:w-56">
+        {Array.from({ length: 9 }, (_, i) => <ellipse key={i} cx="50" cy="55" rx={6 + i * 5} ry={9 + i * 5.5} fill="none" stroke="currentColor" strokeWidth="1.4" strokeDasharray={i % 3 ? '40 6' : 'none'} />)}
+      </svg>
     </div>
   )
 }
 
 export function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-lg border border-line bg-ink-900 px-4 py-3">
-      <p className="text-xs text-muted">{label}</p>
-      <p className="num mt-1 text-2xl font-semibold">{value}</p>
+    <div className="slab bg-ink-900 px-4 py-3">
+      <p className="label text-muted">{label}</p>
+      <p className="num mt-1 font-serif text-3xl font-bold">{value}</p>
     </div>
   )
 }
 
 const tones: Record<string, string> = {
-  SUCCESS: 'bg-accent/15 text-accent', ACTIVE: 'bg-accent/15 text-accent',
-  DECLINED: 'bg-bad/15 text-bad', REVOKED: 'bg-bad/15 text-bad',
-  DELETION_REQUESTED: 'bg-warn/15 text-warn', MOCK: 'bg-warn/15 text-warn',
+  SUCCESS: 'border-accent text-accent', ACTIVE: 'border-accent text-accent',
+  DECLINED: 'border-bad text-bad', REVOKED: 'border-bad text-bad',
+  DELETION_REQUESTED: 'border-warn text-warn', MOCK: 'border-warn text-warn bg-[#fff4d6]',
 }
 export function Badge({ children }: { children: string }) {
   return (
-    <span className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${tones[children] ?? 'bg-ink-800 text-muted'}`}>
+    <span className={`label inline-block rounded-full border-[1.5px] px-2 py-0.5 !text-[10px] font-semibold ${tones[children] ?? 'border-muted text-muted'}`}>
       {children.replace('_', ' ')}
     </span>
   )
@@ -74,7 +84,7 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 export function ErrorBox({ error, retry }: { error: ApiError; retry?: () => void }) {
   return (
-    <div role="alert" className="rounded-md border border-bad/40 bg-bad/10 p-4 text-sm text-bad">
+    <div role="alert" className="border-[1.5px] border-bad bg-[#fbe6e1] p-4 text-sm text-bad">
       {error.message}
       {retry && (
         <button onClick={retry} className="ml-3 underline">Retry</button>
@@ -106,7 +116,7 @@ export function Table({ head, children }: { head: string[]; children: ReactNode 
     <div className="-mx-4 overflow-x-auto sm:mx-0">
       <table className="w-full min-w-[32rem] text-left text-sm">
         <thead>
-          <tr className="border-b border-line text-xs uppercase tracking-wider text-muted">
+          <tr className="label border-b-[1.5px] border-fg text-muted">
             {head.map((h) => <th key={h} scope="col" className="px-4 py-2 font-medium sm:px-3">{h}</th>)}
           </tr>
         </thead>
@@ -139,10 +149,10 @@ export function PaymentsTable({ path, show, detail }: { path: string; show: ('pa
         ))}
       </Table>
       <div className="mt-3 flex items-center justify-between text-xs text-muted">
-        <span>{data.count} total</span>
+        <span className="label">{data.count} total</span>
         <span className="flex gap-2">
-          <button disabled={!data.previous} onClick={() => setPage(page - 1)} className="rounded border border-line px-3 py-1 disabled:opacity-40">Previous</button>
-          <button disabled={!data.next} onClick={() => setPage(page + 1)} className="rounded border border-line px-3 py-1 disabled:opacity-40">Next</button>
+          <button disabled={!data.previous} onClick={() => setPage(page - 1)} className="border-[1.5px] border-fg px-3 py-1 font-medium text-fg hover:bg-hi disabled:opacity-30">Previous</button>
+          <button disabled={!data.next} onClick={() => setPage(page + 1)} className="border-[1.5px] border-fg px-3 py-1 font-medium text-fg hover:bg-hi disabled:opacity-30">Next</button>
         </span>
       </div>
     </div>

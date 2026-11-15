@@ -32,9 +32,9 @@ function view(t: LiveTerminal): { title: string; big?: string; sub?: string; ton
   }
 }
 
-const DOT = { live: 'bg-accent', connecting: 'bg-warn', offline: 'bg-muted' }
+const DOT = { live: 'bg-[#3fd14a] shadow-[0_0_6px_#3fd14a]', connecting: 'bg-[#f2b84b]', offline: 'bg-[#8a8170]' }
 const LABEL = { live: 'Live', connecting: 'Connecting', offline: 'Offline' }
-const TONE = { ok: 'text-accent', bad: 'text-bad', warn: 'text-warn' }
+const TONE = { ok: 'text-lcd-ink', bad: 'text-lcd-ink underline decoration-2', warn: 'text-lcd-ink' }
 
 const saved = () => { try { return localStorage.getItem('biopay.terminal.open') === '1' } catch { return false } }
 
@@ -88,36 +88,41 @@ export default function TerminalDisplay() {
   return (
     <div ref={box} style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
       className="fixed bottom-4 right-4 z-40 w-[min(18rem,calc(100vw-2rem))] touch-none select-none">
-      <div className="overflow-hidden rounded-xl border border-line bg-ink-900/95 shadow-2xl shadow-black/50 backdrop-blur">
+      <div className="slab overflow-hidden rounded-[18px] bg-[#e9e2d2]">
         <div onPointerDown={drag} className="flex cursor-grab items-center gap-2 px-3 py-2 active:cursor-grabbing">
           <span className={`h-2.5 w-2.5 rounded-full ${DOT[conn]} ${conn === 'live' ? 'motion-safe:animate-pulse' : ''}`} />
-          <span className="text-xs font-medium">Terminal · {LABEL[conn]}</span>
+          <span className="label !text-[10px] font-semibold">Terminal · {LABEL[conn]}</span>
           {terminals && terminals.length > 1 && (
             <select aria-label="Terminal" value={sel} onChange={(e) => setSel(Number(e.target.value))}
-              className="ml-1 min-w-0 flex-1 rounded border border-line bg-ink-800 px-1 text-xs">
+              className="ml-1 min-w-0 flex-1 border border-fg bg-ink-900 px-1 text-xs">
               {terminals.map((x, i) => <option key={x.id} value={i}>{x.name}</option>)}
             </select>
           )}
           <button onClick={toggle} aria-expanded={open} aria-label={open ? 'Collapse terminal display' : 'Expand terminal display'}
-            className="ml-auto grid h-7 w-7 place-items-center rounded text-muted hover:bg-ink-800 hover:text-fg">{open ? '–' : '▢'}</button>
+            className="ml-auto grid h-7 w-7 place-items-center rounded-full border border-fg bg-ink-900 text-fg hover:bg-hi">{open ? '–' : '▢'}</button>
         </div>
         {open && (
-          <div className="border-t border-line p-3">
+          <div className="border-t-[1.5px] border-fg p-3">
             <div role="status" aria-live="polite"
-              className="grid h-32 place-content-center gap-1 rounded-lg border border-line bg-ink-950 px-3 text-center font-mono">
+              className="grid h-32 place-content-center gap-1 rounded-md border-[3px] border-[#2b2a25] bg-lcd px-3 text-center font-mono text-lcd-ink shadow-[inset_0_2px_8px_rgba(0,0,0,0.25)]">
               {v ? (
                 <div key={t?.screen} className="screen-in">
-                  <p className={`text-xs tracking-widest ${v.tone ? TONE[v.tone] : 'text-muted'} ${v.pulse ? 'motion-safe:animate-pulse' : ''}`}>{v.title}</p>
-                  {v.big && <p className="num my-1 text-3xl font-semibold text-fg">{v.big}</p>}
-                  {v.sub && <p className="text-[11px] text-muted">{v.sub}</p>}
+                  <p className={`text-xs font-semibold tracking-widest ${v.tone ? TONE[v.tone] : 'text-lcd-ink/70'} ${v.pulse ? 'motion-safe:animate-pulse' : ''}`}>{v.title}</p>
+                  {v.big && <p className="num my-1 text-3xl font-semibold text-lcd-ink">{v.big}</p>}
+                  {v.sub && <p className="text-[11px] text-lcd-ink/75">{v.sub}</p>}
                 </div>
               ) : (
-                <p className="text-xs text-muted">
+                <p className="text-xs text-lcd-ink/70">
                   {conn === 'connecting' ? 'Connecting to server…' : 'Terminal offline. Nothing is shown until the device reports in.'}
                 </p>
               )}
             </div>
-            {v && t?.data.mock && <p className="mt-2 text-[11px] text-warn">MOCK terminal · simulated, not a physical fingerprint match</p>}
+            <div aria-hidden className="mt-3 grid grid-cols-4 gap-1.5 px-1">
+              {'123A456B789C*0#D'.split('').map((k) => (
+                <span key={k} className="grid h-5 place-items-center rounded-[4px] border border-fg bg-ink-900 font-mono text-[10px] shadow-[0_2px_0_#16140f]">{k}</span>
+              ))}
+            </div>
+            {v && t?.data.mock && <p className="mt-2 text-[11px] font-semibold text-warn">MOCK terminal · simulated, not a physical fingerprint match</p>}
           </div>
         )}
       </div>

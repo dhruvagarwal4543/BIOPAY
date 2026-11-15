@@ -22,8 +22,8 @@ function Protected({ role, children }: { role: Role; children: ReactNode }) {
   if (user.role !== role) {
     return (
       <Layout title="Not authorised">
-        <div className="mx-auto max-w-md p-8 text-center">
-          <h2 className="text-xl font-semibold">Not authorised</h2>
+        <div className="slab mx-auto max-w-md bg-ink-900 p-8 text-center">
+          <p className="font-serif text-2xl font-bold italic">Wrong desk.</p>
           <p className="mt-2 text-sm text-muted">Your {user.role} account cannot open this page.</p>
           <a href={`/${user.role}`} className="mt-4 inline-block text-accent underline">Go to your dashboard</a>
         </div>

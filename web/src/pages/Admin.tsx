@@ -62,7 +62,7 @@ export default function Admin() {
                 <tr key={t.id}>
                   <Td>{t.name}</Td><Td>{t.merchant}</Td><Td><Badge>{t.status}</Badge></Td><Td>{when(t.last_seen)}</Td>
                   <Td>{t.status === 'ACTIVE' && (
-                    <button onClick={() => act(`/admin/terminals/${t.id}/revoke/`, `Revoke ${t.name}? Its key stops working immediately.`)} className="rounded border border-bad/50 px-2 py-1 text-xs text-bad hover:bg-bad/10">Revoke</button>
+                    <button onClick={() => act(`/admin/terminals/${t.id}/revoke/`, `Revoke ${t.name}? Its key stops working immediately.`)} className="border-[1.5px] border-bad px-2 py-1 text-xs font-medium text-bad hover:bg-[#fbe6e1]">Revoke</button>
                   )}</Td>
                 </tr>
               ))}
@@ -76,7 +76,7 @@ export default function Admin() {
                   <tr key={e.id}>
                     <Td>{e.customer}</Td><Td>{e.terminal}</Td><Td><Badge>{e.status}</Badge></Td><Td><Badge>{e.source}</Badge></Td><Td>{when(e.consented_at)}</Td>
                     <Td>{e.status !== 'REVOKED' && (
-                      <button onClick={() => act(`/admin/enrollments/${e.id}/revoke/`, `Revoke ${e.customer}'s enrollment? Payments with it stop immediately.`)} className="rounded border border-bad/50 px-2 py-1 text-xs text-bad hover:bg-bad/10">
+                      <button onClick={() => act(`/admin/enrollments/${e.id}/revoke/`, `Revoke ${e.customer}'s enrollment? Payments with it stop immediately.`)} className="border-[1.5px] border-bad px-2 py-1 text-xs font-medium text-bad hover:bg-[#fbe6e1]">
                         {e.status === 'DELETION_REQUESTED' ? 'Complete deletion' : 'Revoke'}
                       </button>
                     )}</Td>

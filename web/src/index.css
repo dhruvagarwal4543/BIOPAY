@@ -1,40 +1,68 @@
 @import 'tailwindcss';
 
+/* Paper & ink. Token names are kept from the dark theme so every page re-skins from here:
+   ink-950 = page paper, ink-900 = card stock, ink-800 = pressed paper. */
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --color-ink-950: #0a101c;
-  --color-ink-900: #0e1626;
-  --color-ink-800: #141f33;
-  --color-line: #233047;
-  --color-fg: #e8edf6;
-  --color-muted: #94a1b8;
-  --color-accent: #2dd4bf;
-  --color-accent-dim: #134e48;
-  --color-warn: #f2b84b;
-  --color-bad: #f0707a;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-ink-950: #f2ede3;
+  --color-ink-900: #fbf9f4;
+  --color-ink-800: #e7dfcf;
+  --color-line: #cfc5b2;
+  --color-fg: #16140f;
+  --color-muted: #6b6355;
+  --color-accent: #2236c8;
+  --color-accent-dim: #dfe3fb;
+  --color-hi: #e6ff3a;
+  --color-warn: #9a5b00;
+  --color-bad: #b9301d;
+  --color-lcd: #c8d2ae;
+  --color-lcd-ink: #1f2a12;
 }
 
+html { background: var(--color-ink-950); }
 body {
-  background: var(--color-ink-950);
+  background-color: var(--color-ink-950);
+  /* faint ruled-paper grain, drawn with gradients so nothing extra is downloaded */
+  background-image:
+    radial-gradient(rgba(22, 20, 15, 0.045) 1px, transparent 1px),
+    linear-gradient(to right, rgba(22, 20, 15, 0.035) 1px, transparent 1px);
+  background-size: 22px 22px, 88px 88px;
   color: var(--color-fg);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
-.num {
-  font-variant-numeric: tabular-nums;
+h1, h2 { font-family: var(--font-serif); font-optical-sizing: auto; letter-spacing: -0.02em; }
+
+.num { font-variant-numeric: tabular-nums; }
+.label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+
+/* the hard "printed" shadow used by cards and buttons */
+.slab { border: 1.5px solid var(--color-fg); box-shadow: 5px 5px 0 0 var(--color-fg); }
+.press { transition: transform 0.12s ease, box-shadow 0.12s ease; }
+.press:hover { transform: translate(-1px, -1px); box-shadow: 6px 6px 0 0 var(--color-fg); }
+.press:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 0 var(--color-fg); }
+
+/* highlighter-pen mark behind a word */
+.marker {
+  background: linear-gradient(transparent 58%, var(--color-hi) 58%, var(--color-hi) 92%, transparent 92%);
+  padding: 0 0.08em;
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-@keyframes screen-in {
-  from { opacity: 0; transform: translateY(4px); }
-}
-.screen-in {
-  animation: screen-in 0.18s ease-out;
-}
+input, select, textarea { background: var(--color-ink-900); }
+
+@keyframes screen-in { from { opacity: 0; transform: translateY(4px); } }
+.screen-in { animation: screen-in 0.18s ease-out; }
+
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.ticker { animation: ticker 38s linear infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .screen-in { animation: none; }
+  .screen-in, .ticker { animation: none; }
+  .press, .press:hover, .press:active { transition: none; transform: none; }
 }
