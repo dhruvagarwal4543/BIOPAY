@@ -46,9 +46,10 @@ export function Register() {
 }
 
 export function EnrollPanel({ onDone }: { onDone: () => void }) {
-  const { data } = useApi<{ mock_enrollment: boolean; terminals: { id: number; name: string; merchant: string }[] }>('/customer/terminals/')
+  const { data } = useApi<{ mock_enrollment: boolean; real_sensor: boolean; terminals: { id: number; name: string; merchant: string }[] }>('/customer/terminals/')
   const [error, setError] = useState<ApiError | null>(null)
-  if (!data?.mock_enrollment) return null
+  if (!data?.mock_enrollment && !data?.real_sensor) return null
+  const real = data.real_sensor
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
@@ -60,14 +61,14 @@ export function EnrollPanel({ onDone }: { onDone: () => void }) {
   }
   return (
     <form onSubmit={submit} className="space-y-3 rounded border border-line p-3">
-      <p className="text-sm font-medium">Add a simulated enrollment</p>
+      <p className="text-sm font-medium">{real ? 'Reserve a fingerprint slot' : 'Add a simulated enrollment'}</p>
       {error && <ErrorBox error={error} />}
       <select name="terminal" required aria-label="Terminal" className={input}>
         {data.terminals.map((t) => <option key={t.id} value={t.id}>{t.merchant} · {t.name}</option>)}
       </select>
-      <label className="flex gap-2 text-sm"><input name="consent" type="checkbox" required className="mt-1" /><span>I consent to enrolling a simulated fingerprint on this terminal. I can withdraw at any time.</span></label>
-      <label className="flex gap-2 text-sm"><input name="sim" type="checkbox" className="mt-1" /><span>Also allow the merchant simulator to charge this enrollment (demo only, you can switch it off any time).</span></label>
-      <button className="rounded bg-accent px-3 py-1.5 text-sm font-semibold text-ink-950">Enroll (MOCK)</button>
+      <label className="flex gap-2 text-sm"><input name="consent" type="checkbox" required className="mt-1" /><span>{real ? 'I consent to enrolling my fingerprint on this terminal’s sensor. The template stays on the sensor, never on the server. I can withdraw at any time.' : 'I consent to enrolling a simulated fingerprint on this terminal. I can withdraw at any time.'}</span></label>
+      {!real && <label className="flex gap-2 text-sm"><input name="sim" type="checkbox" className="mt-1" /><span>Also allow the merchant simulator to charge this enrollment (demo only, you can switch it off any time).</span></label>}
+      <button className="rounded bg-accent px-3 py-1.5 text-sm font-semibold text-ink-950">{real ? 'Reserve slot' : 'Enroll (MOCK)'}</button>
     </form>
   )
 }

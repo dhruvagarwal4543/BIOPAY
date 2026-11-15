@@ -14,3 +14,5 @@ htmlcov/
 firmware/src/config.h
 .demo-credentials
 .demo-pids
+docs/FINAL_REPORT.html
+firmware/.pio/

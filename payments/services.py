@@ -13,7 +13,7 @@ def _check_amount(amount):
         raise ValueError("Amount must be a positive integer within the development limit.")
 
 
-def _transfer(*, payment_id, customer, merchant, amount, terminal=None, sensor_slot=None):
+def _transfer(*, payment_id, customer, merchant, amount, terminal=None, sensor_slot=None, auth_method="MOCK"):
     """Must run inside the caller's durable transaction."""
     # get_or_create uses the UUID uniqueness constraint to resolve racing inserts.
     payment, created = Payment.objects.get_or_create(
@@ -24,6 +24,7 @@ def _transfer(*, payment_id, customer, merchant, amount, terminal=None, sensor_s
             "amount": amount,
             "terminal": terminal,
             "sensor_slot": sensor_slot,
+            "auth_method": auth_method,
             "status": Payment.Status.DECLINED,
             "decline_reason": "insufficient_funds",
         },
@@ -76,7 +77,7 @@ def pay_demo(*, payment_id, amount):
 
 
 @transaction.atomic(durable=True)
-def pay_at_terminal(*, terminal, sensor_slot, payment_id, amount, require_simulator_consent=False):
+def pay_at_terminal(*, terminal, sensor_slot, payment_id, amount, require_simulator_consent=False, source="MOCK"):
     """Payer and merchant come from server records: the slot's enrollment and the terminal."""
     _check_amount(amount)
     # Lock order is fixed everywhere: terminal -> enrollment -> payment row -> wallets (by pk).
@@ -88,7 +89,7 @@ def pay_at_terminal(*, terminal, sensor_slot, payment_id, amount, require_simula
         raise TerminalRevoked
     # Locking the enrollment makes a concurrent revoke/deletion request wait or win cleanly.
     candidates = Enrollment.objects.select_for_update().select_related("customer").filter(
-        terminal=terminal, sensor_slot=sensor_slot, status=Enrollment.Status.ACTIVE)
+        terminal=terminal, sensor_slot=sensor_slot, status=Enrollment.Status.ACTIVE, source=source)  # a mock slot can never pay on a real sensor path
     if require_simulator_consent:  # checked under the same lock, so withdrawing consent wins or waits
         candidates = candidates.filter(simulator_allowed=True)
     enrollment = candidates.first()
@@ -104,7 +105,7 @@ def pay_at_terminal(*, terminal, sensor_slot, payment_id, amount, require_simula
         return existing, False
     return _transfer(
         payment_id=payment_id, customer=enrollment.customer, merchant=terminal.merchant,
-        amount=amount, terminal=terminal, sensor_slot=sensor_slot,
+        amount=amount, terminal=terminal, sensor_slot=sensor_slot, auth_method=source,
     )
 
 

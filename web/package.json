@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:real": "node e2e-real/demo.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

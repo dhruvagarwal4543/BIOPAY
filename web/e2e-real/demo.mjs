@@ -88,14 +88,23 @@ const t = await text(); for (const a of ['customer.registered', 'enrollment.crea
 log('admin audit shows register / enroll / simulator_off'); await page.goto(BASE + '/admin/audit'); await axe('admin audit')
 // role isolation
 await page.goto(BASE + '/merchant'); await has(/Not authorised/); log('admin cannot open merchant page (role isolation)'); await logout()
-// responsive overflow on app pages
-for (const w of [390, 768, 1024, 1440]) {
-  await page.setViewportSize({ width: w, height: 850 })
-  for (const p of ['/', '/login', '/register']) { await page.goto(BASE + p); assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${p}@${w}`) }
+// responsive overflow on every page of every role, 320..1920
+const WIDTHS = [320, 390, 768, 1024, 1440, 1920]
+const overflowAt = async (pages) => {
+  for (const w of WIDTHS) {
+    await page.setViewportSize({ width: w, height: 850 })
+    for (const p of pages) {
+      await page.goto(BASE + p); await page.waitForTimeout(350)
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${p}@${w}`)
+    }
+  }
 }
+await overflowAt(['/', '/login', '/register'])
+await login('demo-merchant', PW); await overflowAt(['/merchant', '/merchant/terminal']); await logout()
+await login(user, volunteerPw); await overflowAt(['/customer', '/profile']); await logout()
+await login('demo-admin', PW); await overflowAt(['/admin', '/admin/audit']); await page.setViewportSize({ width: 390, height: 844 }); await page.goto(BASE + '/admin'); await page.waitForTimeout(500); await page.screenshot({ path: `${OUT}/06-admin-mobile.png`, fullPage: true }); await logout()
 await login('demo-merchant', PW)
-for (const w of [390, 768, 1024, 1440]) { await page.setViewportSize({ width: w, height: 850 }); for (const p of ['/merchant', '/merchant/terminal']) { await page.goto(BASE + p); await page.waitForTimeout(400); assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${p}@${w}`) } }
 await page.setViewportSize({ width: 390, height: 844 }); await page.goto(BASE + '/merchant/terminal'); await page.screenshot({ path: `${OUT}/05-simulator-mobile.png` })
-log('no horizontal overflow at 390/768/1024/1440')
+log('no horizontal overflow at 320/390/768/1024/1440/1920 on all role pages')
 assert.deepEqual(problems, [], 'console/page errors'); log('no unexpected console errors')
 await browser.close(); console.log('REAL-STACK DEMO: ALL PASSED')

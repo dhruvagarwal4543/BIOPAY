@@ -261,3 +261,19 @@ class SimulatorConsentRaceTest(Base):
             "/api/merchant/simulate/", {**body, "payment_id": str(uuid4())}, format="json")
         self.assertEqual(again.status_code, 403)  # consent is off now
         self.assertEqual(LedgerEntry.objects.count(), 2)
+
+
+class DemoFeaturesOffInProductionConfigTest(Base):
+    """Even with the demo flag left on, a non-DEBUG (production-like) server exposes no mock features."""
+
+    @override_settings(DEBUG=False, BIOPAY_ENABLE_DEMO_API=True)
+    def test_simulator_mock_enroll_consent_and_terminal_api_are_all_404(self):
+        shop = login_client(self.shop_a.user.username)
+        cust = login_client(self.alice.user.username)
+        body = {"payment_id": str(uuid4()), "amount": 5, "sensor_slot": 1}
+        self.assertEqual(shop.post("/api/merchant/simulate/", {**body, "terminal_id": self.term_a.pk}, format="json").status_code, 404)
+        self.assertEqual(cust.post("/api/customer/enroll/", {"terminal_id": self.term_b.pk, "consent": True}, format="json").status_code, 404)
+        self.assertEqual(cust.post(f"/api/customer/enrollments/{self.enr_alice.pk}/simulator/", {"allowed": True}, format="json").status_code, 404)
+        self.assertEqual(self.pay().status_code, 404)  # /api/terminal/payments/ with a valid key
+        self.assertEqual(cust.get("/api/customer/overview/").data["simulator_enabled"], False)
+        self.assertEqual(LedgerEntry.objects.count(), 0)

@@ -1,15 +1,32 @@
-# BioPay terminal firmware (ESP32-S3)
+# BioPay terminal firmware (ESP32 NodeMCU-32S)
 
-**Status: BLOCKED on hardware.** Sensor model, pinout and display are unknown, so no wiring is documented and nothing here has run on a board.
+Hardware: R307S fingerprint (UART), 4x4 keypad (GPIO 32,33,25,26 / 27,14,18,19), LED on GPIO4 (common cathode). No OLED, no buzzer.
 
-Verified (on a laptop): `make -C firmware test` runs `lib/payflow`, the payment state machine, against fakes.
-It checks that a payment UUID is created once, saved before sending, reused on every retry and across a reboot, and cleared only by a definite server answer (success, 422, 403, 409, revoked). Only the sensor slot and amount are ever sent, never a fingerprint template.
+## Status (be honest)
+| Check | Level |
+|---|---|
+| `make test`: payment state machine + amount entry | software, native, fakes |
+| `pio run -e nodemcu-32s` compiles | software build only |
+| Backend real-sensor mode (`python manage.py test payments`) | software, real PostgreSQL |
+| Website widget vs mocked API (`npm run test:e2e`), live endpoints (`manage.py test`) | software, mocked device |
+| R307S match, keypad, LED, Wi-Fi, full payment on the board | **NOT YET RUN on hardware** |
 
-Still to write once hardware is chosen (each implements an interface in `payflow.h`):
-- `Http` over WiFiClientSecure with header `X-BioPay-Terminal-Key` to `POST /api/terminal/payments/`
-- `Store` over NVS (Preferences)
-- `Sensor` for the chosen module (match on the sensor, return its slot)
-- `Rng` (`esp_random`) for UUIDv4, then `main.cpp` (Wi-Fi, keypad/amount entry, result display)
+## Configure and build
+1. `cp include_config.example.h src/config.h` (git-ignored). Fill Wi-Fi, host, terminal key, enrol PIN, and **FP_RX_PIN / FP_TX_PIN from the working sensor test**. The build refuses to compile while they are `-1`.
+2. TLS: set `BIOPAY_CA_CERT` for HTTPS. Plain HTTP only with `BIOPAY_USE_TLS 0` on a private LAN.
+3. `pio run -e nodemcu-32s`, then `pio run -e nodemcu-32s -t upload` and `pio device monitor`.
 
-Real-device checklist (all UNCHECKED): flash; enroll with consent; match; pay; kill Wi-Fi mid-payment and confirm one debit after retry; revoke terminal and confirm refusal.
-Enrollment slots are per-terminal sensor slots, never global identity; the server never accepts a payer id from the terminal.
+## Backend
+Run Django with `BIOPAY_TERMINAL_REAL_SENSOR=true` (works with `DJANGO_DEBUG=false`). Create the terminal with `manage.py create_terminal` and put its key in `config.h`. In this mode only enrollments with `source=R307S` can pay; mock enrollments and the merchant simulator never apply.
+
+## Use
+- Pay: any key, type amount, `#`, `#` again to confirm (`*` corrects), then place the finger.
+- Enrol (needs the customer's consent first): customer clicks "Reserve slot" in the web app, which shows a slot number; at the device press `A`, enter the enrol PIN, enter that slot, scan twice.
+- LED: blip every 2s idle | fast blink waiting/working | solid 2s paid | 3 slow blinks failure | 1Hz blink unconfirmed (same payment is resent, never doubled).
+- Unconfirmed payments are stored in NVS and resent with the same UUID, also after a reboot.
+
+## Live virtual display (website, replaces the removed OLED)
+Merchants and admins see a floating terminal screen (bottom-right; collapse, drag). The device posts UI states (`idle, amount, confirm, finger, matched, no_match, processing, unconfirmed, error`) to `POST /api/terminal/status/` with the terminal key, every change plus a 5s heartbeat. The **server** writes `success`/`declined` (with amount and short reference) from the real payment service, so a client cannot announce a result. The site polls `GET /api/merchant/terminals/live/` every 1s (4s collapsed); a terminal with no report for 15s shows **Offline** and no screen. Non-real-sensor mode is labelled MOCK. Only UI state is sent: no templates, images, keys or payer names.
+
+## Hardware verification checklist (all UNCHECKED)
+Sensor found at boot; enrol with consent; match pays and web history shows an `R307S` payment; wrong finger sends nothing; insufficient funds shows failure LED; Wi-Fi off mid-payment gives exactly one debit after reconnect; revoked terminal is refused; keypad key order matches the labels; website widget goes Live within ~5s of boot, mirrors typed digits and finger prompts, shows PAID/DECLINED with the same reference as history, and turns Offline ~15s after unplugging.

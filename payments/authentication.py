@@ -42,8 +42,8 @@ class TerminalKeyAuthentication(BaseAuthentication):
     """Device credential, separate from web login. Gated like the mock fingerprint it serves."""
 
     def authenticate(self, request):
-        if not settings.DEBUG or not settings.BIOPAY_ENABLE_DEMO_API:
-            raise NotFound("Mock terminal API is disabled.")
+        if not (settings.BIOPAY_TERMINAL_REAL_SENSOR or (settings.DEBUG and settings.BIOPAY_ENABLE_DEMO_API)):
+            raise NotFound("Terminal API is disabled.")
         key = request.headers.get("X-BioPay-Terminal-Key", "")
         terminal = (
             Terminal.objects.select_related("merchant")

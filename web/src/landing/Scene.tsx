@@ -1,4 +1,4 @@
-import { Line } from '@react-three/drei'
+import { Line, RoundedBox } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useMemo, useRef, type MutableRefObject, type ReactNode } from 'react'
 import * as THREE from 'three'
@@ -84,6 +84,8 @@ function Terminal({ p }: { p: P }) {
   )
 }
 
+const CARD = { metalness: 0.4, roughness: 0.4, emissiveIntensity: 0.5 } as const
+
 function Wallet({ p }: { p: P }) {
   const g = useRef<THREE.Group>(null!)
   const coin = useRef<THREE.Mesh>(null!)
@@ -91,13 +93,23 @@ function Wallet({ p }: { p: P }) {
     const t = smooth(seg(p.current, 0.52, 0.6)) * (1 - smooth(seg(p.current, 0.74, 0.78)))
     g.current.visible = t > 0.01
     g.current.scale.setScalar(t)
-    coin.current.position.x = -1.7 + 3.4 * smooth(seg(p.current, 0.6, 0.7))
+    const m = smooth(seg(p.current, 0.6, 0.7))
+    coin.current.position.x = -1.7 + 3.4 * m
+    coin.current.position.y = 0.2 + Math.sin(m * Math.PI) * 0.5 // arcs over, so it reads as a transfer
   })
   return (
     <group ref={g}>
-      <mesh position={[-1.7, 0, 0]}><boxGeometry args={[1.2, 0.8, 0.3]} /><meshStandardMaterial color="#2563eb" emissive="#1d4ed8" emissiveIntensity={0.5} metalness={0.4} roughness={0.4} /></mesh>
-      <mesh position={[1.7, 0, 0]}><boxGeometry args={[1.2, 0.8, 0.3]} /><meshStandardMaterial color="#7c3aed" emissive="#6d28d9" emissiveIntensity={0.5} metalness={0.4} roughness={0.4} /></mesh>
-      <mesh ref={coin} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.28, 0.28, 0.06, 40]} /><meshStandardMaterial color="#67e8f9" emissive="#0891b2" emissiveIntensity={0.8} /></mesh>
+      <RoundedBox args={[1.2, 0.8, 0.3]} radius={0.06} position={[-1.7, 0, 0]}>
+        <meshStandardMaterial color="#2563eb" emissive="#1d4ed8" {...CARD} />
+      </RoundedBox>
+      <RoundedBox args={[1.2, 0.8, 0.3]} radius={0.06} position={[1.7, 0, 0]}>
+        <meshStandardMaterial color="#7c3aed" emissive="#6d28d9" {...CARD} />
+      </RoundedBox>
+      <Line points={[[-1.1, 0, 0], [1.1, 0, 0]]} color="#67e8f9" lineWidth={1} transparent opacity={0.35} dashed dashSize={0.1} gapSize={0.1} />
+      <mesh ref={coin} position={[-1.7, 0.2, 0.45]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.28, 0.28, 0.06, 40]} />
+        <meshStandardMaterial color="#67e8f9" emissive="#0891b2" emissiveIntensity={0.9} />
+      </mesh>
     </group>
   )
 }
@@ -126,7 +138,7 @@ function Stage({ children }: { children: ReactNode }) {
   const portrait = aspect < 1
   // Portrait: shrink to fit the width and lift above the copy. Wide: sit right of the copy.
   return (
-    <group position={[aspect > 1.2 ? 1.5 : 0, portrait ? 1.3 : 0, 0]} scale={portrait ? Math.max(0.5, aspect) : 1}>
+    <group position={[aspect > 1.2 ? 1.5 : 0, portrait ? 1.9 : 0, 0]} scale={portrait ? Math.max(0.5, aspect) : 1}>
       {children}
     </group>
   )

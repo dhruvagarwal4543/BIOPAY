@@ -20,7 +20,7 @@ const SCENES = [
   { id: 'identity', h: 'Your Identity. Your Payment.', p: 'Experience a future where your fingerprint is your checkout.' },
   { id: 'scan', h: 'The Scan', p: 'Verification happens on the terminal. Your fingerprint template never reaches the BioPay server.' },
   { id: 'transaction', h: 'The Transaction', p: 'Fingerprint verification → terminal authorization → backend validation → wallet transfer.' },
-  { id: 'wallet', h: 'The Digital Wallet', p: 'Debit and credit commit together or not at all. Every payment has one immutable ledger pair.' },
+  { id: 'wallet', h: 'The Digital Wallet', p: 'Customer wallet → merchant wallet. Debit and credit commit together or not at all, and every payment leaves one immutable ledger pair.' },
   { id: 'ecosystem', h: 'The Ecosystem', p: 'Customer dashboard, merchant dashboard, admin operations and a physical fingerprint terminal.' },
   { id: 'experience', h: 'Experience BioPay', p: 'Sign in to the live demo, or read how the system works.' },
 ]
@@ -58,7 +58,7 @@ export default function Landing() {
       </nav>
       <main className="relative z-10">
         {SCENES.map((s, i) => (
-          <section key={s.id} id={s.id} className="flex min-h-screen items-center px-6 md:px-16">
+          <section key={s.id} id={s.id} className="flex min-h-screen items-end px-6 pb-16 md:items-center md:px-16 md:pb-0">
             <div className="max-w-xl rounded-2xl bg-ink-950/60 p-6 backdrop-blur-sm">
               {i === 0 ? <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">{s.h}</h1>
                 : <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">{s.h}</h2>}
